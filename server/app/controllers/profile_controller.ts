@@ -3,6 +3,14 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 export default class ProfileController {
   async show({ auth, serialize }: HttpContext) {
-    return serialize(UserTransformer.transform(auth.getUserOrFail()))
+    const user = auth.getUserOrFail()
+    
+    // If the user is a cook, preload their cook profile details
+    if (user.role === 'cook') {
+      await user.load('cookProfile' as any)
+    }
+    
+    return serialize(UserTransformer.transform(user))
   }
+
 }

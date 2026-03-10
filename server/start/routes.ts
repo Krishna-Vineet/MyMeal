@@ -19,13 +19,17 @@ router.get('/health', () => {
   return { status: 'ok', service: 'mymeal-api' }
 })
 
+const AuthController = () => import('#controllers/auth_controller')
+
 router
   .group(() => {
     router
       .group(() => {
-        router.post('signup', [controllers.NewAccount, 'store'])
-        router.post('login', [controllers.AccessToken, 'store'])
-        router.post('logout', [controllers.AccessToken, 'destroy']).use(middleware.auth())
+        router.post('register', [AuthController, 'register'])
+        router.post('login', [AuthController, 'login'])
+        
+        // Protected Route
+        router.post('logout', [AuthController, 'logout']).use(middleware.auth())
       })
       .prefix('auth')
       .as('auth')

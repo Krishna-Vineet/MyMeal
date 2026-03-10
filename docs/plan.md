@@ -1,558 +1,831 @@
-
-
-# 🍱 MyMeal
-# Phase 0 Product & System Design
-
-
-## Table of Contents
-1. Product Overview
-2. Core Concepts
-3. User Roles
-4. System Flows
-5. Discovery System
-6. Meal Plan Architecture
-7. Subscription System
-8. Order Engine
-9. Payment & Due System
-10. Review System
-11. Capacity Control
-12. Database Architecture
-13. Entity Relationships
-14. Order Lifecycle
-15. Business Rules
-16. Edge Cases Considered
-17. MVP Scope
-18. Tech Stack Moving Forward
+Below is a **complete, end-to-end roadmap for MyMeal** from **Phase 0 → Final Phase**, consolidating **everything we have discussed so far** (architecture, schema, map pins, pickup slots with time, subscription snapshot, reviews, orders, payments, media later, etc.).
+This roadmap is structured like a **real startup engineering roadmap** so you can follow it step-by-step and also use it as **project documentation**.
 
 ---
 
-## 1. Product Overview
+# MyMeal — Complete Development Roadmap
 
-**MyMeal** is a hyperlocal marketplace connecting **home cooks** with **consumers seeking homemade meals**.
+**Product:** MyMeal
+**Goal:** Platform connecting **home cooks** with **consumers** for one-time meals or subscription meal plans.
 
-Unlike traditional food delivery platforms, the system operates on a **pickup-based model**, eliminating the need for delivery logistics.
-
-Consumers subscribe to **customizable meal plans**, pick up food at designated locations, and interact directly with cooks through subscriptions and orders.
-
-Core principles of the product:
-
-* Hyperlocal food discovery
-* Subscription-based meal plans
-* Flexible meal customization
-* Pickup-based logistics
-* Transparent payment and due tracking
-* Continuous feedback loop between consumer and cook
-
----
-
-# 2. Core Concepts
-
-The platform revolves around **five main concepts**:
-
-### Cook
-
-A user who prepares meals and publishes meal plans.
-
-### Consumer
-
-A user who subscribes to meal plans and consumes meals.
-
-### Meal Plan
-
-A customizable template created by a cook describing a meal offering.
-
-### Subscription
-
-An agreement between consumer and cook to receive meals according to a plan.
-
-### Order
-
-A daily instance of a meal created from a subscription.
-
-### Review
-
-Feedback left by consumers after meal completion.
-
----
-
-# 3. User Roles
-
-Two roles exist in the MVP system.
-
-### Consumer
-
-Responsibilities:
-
-* Browse nearby cooks
-* Explore meal plans
-* Customize meals
-* Subscribe to meal plans
-* Manage subscriptions
-* Pick up meals
-* Leave reviews
-* Manage payments
-
----
-
-### Cook
-
-Responsibilities:
-
-* Create profile
-* Create meal plans
-* Configure meal components
-* Configure pickup locations
-* Receive subscriptions
-* Prepare daily orders
-* Mark orders as completed
-* View consumer reviews
-
----
-
-# 4. User Flow
-
-## Consumer Flow
-
-1. Register/Login
-2. Enter location
-3. Discover cooks nearby
-4. Open cook profile
-5. View available meal plans
-6. Customize meal components
-7. Select pickup location
-8. Select subscription dates
-9. Make advance payment
-10. Subscription created
-11. Orders generated automatically
-12. Consumer picks up meals daily
-13. Consumer reviews meals
-
----
-
-## Cook Flow
-
-1. Register/Login
-2. Create cook profile
-3. Add kitchen details
-4. Create meal plan
-5. Define meal components
-6. Define pickup locations
-7. Set subscriber capacity
-8. Wait for subscriptions
-9. Receive daily order list
-10. Prepare meals
-11. Mark orders prepared
-12. Consumer picks up meals
-13. Orders complete
-14. Cook receives reviews
-
----
-
-# 5. Discovery System
-
-Consumers discover cooks using a **map-based interface**.
-
-Interface contains:
-
-Search bar
-Interactive map
-Cook location pins
-Scrollable cook list
-
-User interactions:
-
-* Moving map updates visible cooks
-* Clicking a map pin highlights cook card
-* Clicking cook card focuses map pin
-* Searching location moves map
-
-Backend queries cooks using **geographical coordinates stored in cook profiles**.
-
-Example query:
+Key concept:
 
 ```
-GET /cooks?lat=28.61&lng=77.37&radius=5km
+Cook prepares meal plans
+↓
+Consumers subscribe to them
+↓
+Consumers pick pickup slot (place + time)
+↓
+Daily orders are generated
+↓
+Meals picked up by consumers
+↓
+Reviews + payments
 ```
 
 ---
 
-# 6. Meal Plan Architecture
+# Phase 0 — Product Planning & Architecture
 
-Meal plans are **templates created by cooks** describing a meal offering.
+### Objective
 
-Each meal plan includes:
+Define the **product concept, architecture, and development strategy** before writing code.
 
-Title
-Description
-Banner image
-Base price
-Validity type
-Maximum subscribers
+### Major Decisions
+
+#### Product Model
+
+Platform connecting:
+
+```
+Cooks
+Consumers
+```
+
+Cooks can sell:
+
+```
+one-time meals
+subscription meal plans
+```
+
+---
+
+### Core System Entities Identified
+
+```
+Users
+CookProfiles
+MealPlans
+MealComponents
+PickupSlots
+Subscriptions
+SubscribedMealComponents
+Orders
+OrderNotes
+Payments
+Reviews
+```
+
+---
+
+### Pickup Slot Design
+
+Important real-world requirement:
+
+```
+same location
+different times
+```
 
 Example:
 
 ```
-Home Style Veg Lunch
-Base price: ₹30
-Validity: weekdays
-Max subscribers: 10
+Home Kitchen — 2:00 PM
+Home Kitchen — 4:00 PM
+College Gate — 2:30 PM
+Sector 4 Entrance — 3:00 PM
 ```
 
-Meal plans contain **multiple meal components**.
+Solution:
+
+```
+PickupSlot = location + time
+```
 
 ---
 
-# 7. Meal Components
+### Meal Component Design
 
-Meal components represent **individual food items inside a meal plan**.
+Meal components include:
 
-Examples:
-
+```
 Roti
-Rice
-Sabzi
 Dal
+Paneer
 Salad
-Achaar
+Achar
+```
 
-Each component contains:
+Design supports:
 
-Minimum quantity
-Maximum quantity
-Price per unit
-Optional or mandatory flag
+```
+quantity based items
+toggle items (salad / achar)
+```
 
-Example:
+Field added:
 
-| Component | Min | Max | Price    |
-| --------- | --- | --- | -------- |
-| Roti      | 2   | 4   | ₹5       |
-| Rice      | 0   | 1   | ₹10      |
-| Sabzi     | 1   | 1   | included |
-| Salad     | 0   | 1   | ₹5       |
-
-Consumers select quantities during subscription.
+```
+include (boolean)
+```
 
 ---
 
-# 8. Pickup Locations
+### Subscription Snapshot Design
 
-Each meal plan may contain **multiple pickup locations**.
+When a consumer subscribes:
 
-Examples:
+```
+meal components copied
+→ subscribed_meal_components
+```
 
-Sector 62 Metro
-Amity Gate
-Gaur City Gate
+Reason:
 
-Pickup locations store:
-
-Name
-Latitude
-Longitude
-
-Consumers select a pickup location during subscription and may change it for individual orders.
+```
+lock prices
+allow customization
+prevent future price changes affecting old subscriptions
+```
 
 ---
 
-# 9. Subscription System
+### Technology Stack Selected
 
-Subscriptions represent the **agreement between consumer and cook**.
-
-They store:
-
-Consumer
-Meal plan
-Pickup location
-Start date
-End date
-Customized meal configuration
-Meal price snapshot
-Financial information
-
-Example:
+Frontend:
 
 ```
-Consumer subscribes for 30 days
-Meal price = ₹50
-Total value = ₹1500
+React
+Vite
+Tailwind
 ```
 
-Subscription also tracks:
+Backend:
 
-Amount paid
-Amount consumed
+```
+AdonisJS
+TypeScript
+Lucid ORM
+```
 
-This allows real-time due calculation.
+Database:
+
+```
+PostgreSQL
+Hosted on Neon
+```
 
 ---
 
-# 10. Subscribed Meal Components
-
-When a consumer subscribes, their **custom meal configuration** is stored.
-
-Example:
-
-Consumer selects:
+### Phase 0 Outcome
 
 ```
-Roti: 3
-Rice: 1
-Salad: 0
+✔ product concept finalized
+✔ architecture defined
+✔ database entities identified
+✔ technology stack chosen
+✔ development roadmap planned
 ```
-
-These selections are stored separately so that cooks know **exact meal preparation requirements**.
 
 ---
 
-# 11. Order Generation Engine
+# Phase 1 — Backend Foundation
 
-Orders are **automatically generated when a subscription is created**.
+### Objective
 
-Algorithm:
-
-1. Take subscription start and end date
-2. Check meal plan validity rules
-3. Generate order for each valid date
-
-Example:
-
-```
-Start: May 1
-End: May 30
-Validity: weekdays
-```
-
-Generated orders:
-
-May 1 → order
-May 2 → order
-May 3 → skip (Sunday)
-
-Orders store:
-
-Subscription reference
-Order date
-Pickup location
-Status
+Create the **backend infrastructure** needed for development.
 
 ---
 
-# 12. Order Lifecycle
+### Backend Framework Setup
 
-Orders move through the following states:
+Framework used:
+
+AdonisJS
+
+Generated project structure:
 
 ```
-scheduled
-prepared
-picked_up
-missed
-cancelled
+app/
+config/
+database/
+start/
+.env
 ```
-
-Explanation:
-
-Scheduled → created but not prepared
-Prepared → meal ready for pickup
-Picked_up → consumer collected meal
-Missed → meal prepared but not collected
-Cancelled → cancelled beforehand
-
-Missed orders may incur a penalty (for example 50% charge).
 
 ---
 
-# 13. Order Notes
-
-Consumers and cooks can communicate via **order notes**.
-
-Examples:
-
-Consumer:
+### MVC Architecture
 
 ```
-Please add extra chutney
+Controllers
+Models
+Middleware
+Routes
+Migrations
 ```
-
-Cook:
-
-```
-Pickup delayed by 10 minutes
-```
-
-Notes are attached to orders and visible to both parties.
 
 ---
 
-# 14. Review System
+### Environment Configuration
 
-Consumers may review meals after pickup.
+Environment variables stored in:
 
-Reviews contain:
+```
+.env
+```
 
-Rating
-Review text
-Consumer ID
-Cook ID
-Meal plan ID
-Subscription ID
-Order ID
+Example variables:
 
-Only **one review per order** is allowed.
-
-Reviews contribute to cook rating statistics.
+```
+PORT
+HOST
+NODE_ENV
+APP_KEY
+LOG_LEVEL
+```
 
 ---
 
-# 15. Payment System
+### Database Setup
 
-Payments are tracked through a **payment ledger**.
+Database:
 
-Subscriptions maintain:
+PostgreSQL
 
-Total subscription value
-Amount paid
-Amount consumed
+Hosted on:
 
-Due is calculated as:
+Neon
+
+Connection configured using:
 
 ```
-due = amount_consumed - amount_paid
+DATABASE_URL
+pooler connection string
 ```
-
-Payment types:
-
-Advance → initial subscription payment
-Partial → payment during subscription
-Settlement → final payment clearing dues
-Refund → returned amount when overpaid
 
 ---
 
-# 16. Capacity Control
+### Migration System
 
-Each meal plan has a **maximum subscriber limit**.
+Adonis migrations enabled.
 
-Example:
-
-```
-max_subscribers = 10
-```
-
-Before creating a subscription, the system checks:
+Command used:
 
 ```
-active_subscriptions < max_subscribers
+node ace migration:run
 ```
 
-If the limit is reached, the meal plan cannot accept new subscriptions.
+Purpose:
+
+```
+versioned database schema
+team collaboration
+environment reproducibility
+```
 
 ---
 
-# 17. Database Architecture
+### API Versioning
 
-Core tables in the system:
+API prefix introduced:
+
+```
+/api/v1
+```
+
+Future safe upgrades possible:
+
+```
+/api/v2
+```
+
+---
+
+### Health Check
+
+Endpoint available:
+
+```
+/health
+```
+
+Used for:
+
+```
+server monitoring
+deployment health checks
+```
+
+---
+
+### Phase 1 Outcome
+
+```
+✔ backend framework initialized
+✔ Neon PostgreSQL connected
+✔ migration system working
+✔ environment config setup
+✔ API versioning ready
+✔ routing structure defined
+```
+
+---
+
+# Phase 2 — Core Backend System
+
+### Objective
+
+Implement **database schema + authentication system**.
+
+---
+
+# Database Schema Implemented
+
+Tables created:
 
 ```
 users
 cook_profiles
 meal_plans
 meal_components
-pickup_locations
 subscriptions
 subscribed_meal_components
+pickup_slots
 orders
 order_notes
-reviews
 payments
+reviews
 ```
 
 ---
 
-# 18. Entity Relationships
+# Users System
 
-High-level relationships:
+Base identity table.
 
-User → may be cook or consumer
-Cook profile → belongs to user
-Cook → creates meal plans
-Meal plan → contains meal components
-Meal plan → contains pickup locations
-Consumer → creates subscriptions
-Subscription → generates orders
-Orders → contain notes and reviews
+Fields:
 
----
+```
+id
+name
+email
+password
+role
+```
 
-# 19. Edge Cases Considered
+Roles:
 
-The system design already accounts for:
-
-Subscription pauses
-Single order cancellation
-Pickup location change
-Consumer customization of meals
-Missed meal penalties
-Partial payments
-Refunds
-Meal plan capacity limits
-Price changes after subscription
+```
+consumer
+cook
+```
 
 ---
 
-# 20. MVP Scope
+# Cook Profiles
 
-The first release focuses on:
+Separate cook-specific information.
 
-Authentication
-Cook profiles
-Meal plan creation
-Meal customization
-Subscription system
-Order generation
-Order management
-Reviews
-Basic payment tracking
+Purpose:
 
-Advanced features like delivery logistics, push notifications, and real payment gateway integrations are intentionally excluded from MVP.
+```
+keep users table clean
+store cook data separately
+```
 
 ---
 
-# 21. Technology Stack Moving Forward
+# Meal Plans
 
-Backend framework:
+Represents food offerings.
 
-**AdonisJS**
+Examples:
 
-Frontend framework:
-
-**React**
-
-Styling:
-
-**Tailwind CSS**
-
-Database:
-
-**PostgreSQL**
+```
+Dinner Thali
+Breakfast Snacks
+Weekly Tiffin Plan
+```
 
 ---
 
-# Phase-0 Outcome
+# Meal Components
 
-After Phase-0, the following are finalized:
+Each meal contains components.
 
-Product idea
-User roles
-System flows
-Discovery model
-Meal plan architecture
-Subscription engine
-Order lifecycle
-Payment logic
-Database entities
-Edge cases
+Examples:
 
-This provides a **clear blueprint for engineering implementation**.
+```
+roti
+dal
+paneer
+salad
+achar
+```
+
+Supports:
+
+```
+quantity items
+toggle items
+```
 
 ---
+
+# Pickup Slots
+
+Location + time combination.
+
+Example:
+
+```
+College Gate — 2:30 PM
+Home Kitchen — 4:00 PM
+```
+
+---
+
+# Subscription System
+
+Consumer commits to meal plan.
+
+Stored fields:
+
+```
+consumer_id
+meal_plan_id
+pickup_slot_id
+start_date
+end_date
+```
+
+---
+
+# Subscribed Meal Components
+
+Stores final meal customization.
+
+Includes:
+
+```
+quantity
+enabled
+price snapshot
+```
+
+---
+
+# Orders
+
+Orders represent **daily meal events**.
+
+Generated from subscriptions.
+
+Fields:
+
+```
+subscription_id
+order_date
+status
+total_price
+pickup_slot_id
+```
+
+---
+
+# Order Notes
+
+Notes added by users.
+
+Examples:
+
+```
+Less spicy
+Extra roti
+Running late
+```
+
+---
+
+# Payments
+
+Tracks payments.
+
+Fields:
+
+```
+order_id
+amount
+status
+transaction_id
+```
+
+Cash payments removed in MVP.
+
+---
+
+# Reviews
+
+Consumers review cooks.
+
+Fields:
+
+```
+consumer_id
+cook_id
+rating
+comment
+```
+
+---
+
+# Authentication System
+
+Implemented using:
+
+AdonisJS Access Tokens.
+
+APIs created:
+
+```
+POST /api/v1/auth/signup
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+GET  /api/v1/account/profile
+```
+
+---
+
+# Protected APIs
+
+Authentication middleware implemented.
+
+Role system enforced.
+
+Examples:
+
+```
+cook-only APIs
+consumer-only APIs
+```
+
+---
+
+### Phase 2 Outcome
+
+```
+✔ complete relational database schema
+✔ authentication system
+✔ role system
+✔ protected APIs
+✔ core platform data structure
+```
+
+Backend is now **production-grade and functional**.
+
+---
+
+# Phase 3 — Cook Platform
+
+### Objective
+
+Allow cooks to **join and create meal offerings**.
+
+Features:
+
+```
+Create cook profile
+Update cook profile
+Add kitchen location
+Create meal plans
+Add meal components
+Create pickup slots
+```
+
+APIs:
+
+```
+POST /cook/profile
+POST /meal-plans
+POST /meal-components
+POST /pickup-slots
+```
+
+---
+
+# Phase 4 — Consumer Discovery
+
+### Objective
+
+Allow consumers to **discover cooks and meals**.
+
+Features:
+
+```
+Browse meal plans
+Search cooks
+Filter by location
+Filter by price
+```
+
+Map integration planned using:
+
+```
+Google Maps or Mapbox
+```
+
+Map will display:
+
+```
+cook pins
+pickup locations
+```
+
+---
+
+# Phase 5 — Subscription System
+
+### Objective
+
+Allow consumers to subscribe.
+
+Flow:
+
+```
+select meal plan
+customize components
+choose pickup slot
+create subscription
+```
+
+System will:
+
+```
+copy components → subscribed_meal_components
+lock pricing
+```
+
+---
+
+# Phase 6 — Order Generation System
+
+### Objective
+
+Generate daily orders.
+
+Mechanism:
+
+```
+cron job / scheduler
+```
+
+Daily process:
+
+```
+active subscription
+→ create order
+→ attach meal components
+```
+
+Orders become visible to cooks.
+
+---
+
+# Phase 7 — Payments
+
+Integrate payment gateway.
+
+Options:
+
+```
+Razorpay
+Stripe
+UPI
+```
+
+Payments tied to:
+
+```
+orders
+subscriptions
+```
+
+---
+
+# Phase 8 — Reviews & Reputation
+
+Consumers can review cooks.
+
+Features:
+
+```
+ratings
+comments
+cook rating aggregation
+```
+
+---
+
+# Phase 9 — Media & Images
+
+Image storage integration.
+
+Recommended service:
+
+```
+Cloudinary
+```
+
+Used for:
+
+```
+meal images
+cook profile images
+food gallery
+```
+
+---
+
+# Phase 10 — Notifications
+
+Notification system.
+
+Types:
+
+```
+order reminders
+pickup reminders
+new meal alerts
+```
+
+Channels:
+
+```
+email
+push notifications
+```
+
+---
+
+# Phase 11 — Performance & Scaling
+
+Production improvements:
+
+```
+caching
+rate limiting
+query optimization
+indexes
+```
+
+Monitoring tools:
+
+```
+logging
+error tracking
+analytics
+```
+
+---
+
+# Final Phase — Production Launch
+
+Prepare platform for real users.
+
+Tasks:
+
+```
+UI polish
+mobile responsiveness
+SEO
+security audit
+load testing
+deployment
+```
+
+Deployment targets:
+
+```
+Frontend → Vercel
+Backend → Fly.io / Railway / Render
+Database → Neon
+```
+
+---
+
+# Final System Capabilities
+
+After all phases the platform supports:
+
+```
+cook onboarding
+meal plan creation
+pickup slot scheduling
+consumer discovery
+subscriptions
+daily order generation
+payments
+reviews
+map-based discovery
+image gallery
+notifications
+```
+
+This becomes a **complete food marketplace platform**.
+
+---
+
+If you want, I can also show you **the 12 biggest architectural mistakes people make in projects like MyMeal** (knowing them now will save you **months of refactoring later**).
