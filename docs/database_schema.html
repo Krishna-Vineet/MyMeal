@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyMeal Database Relational Schema</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #64748b;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            color: var(--text-main);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+        }
+
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .table-def {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .table-def h3 {
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-def .badge {
+            background-color: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: normal;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .type {
+            color: #d946ef;
+            font-family: monospace;
+        }
+
+        .key {
+            color: #eab308;
+            font-weight: bold;
+        }
+
+        .fkey {
+            color: #3b82f6;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        /* Dummy data section */
+        .dummy-data {
+            overflow-x: auto;
+            margin-top: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+        }
+
+        .dummy-data table {
+            min-width: 600px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>MyMeal Database Architecture</h1>
+        <p>Complete relational schema derived from AdonisJS migrations</p>
+    </header>
+
+    <div class="card">
+        <h2>Entity-Relationship Diagram</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Interactive SVG diagram showing all tables and their relations.</p>
+        <div class="mermaid">
+erDiagram
+    users {
+        uuid id PK
+        string name
+        string email UK
+        string password
+        enum role "consumer, cook"
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    cook_profiles {
+        uuid id PK
+        uuid user_id FK
+        string kitchen_name
+        text bio
+        string phone
+        string address
+        string city
+        decimal latitude
+        decimal longitude
+        string image
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    meal_plans {
+        uuid id PK
+        uuid cook_id FK
+        string title
+        text description
+        string banner_image
+        integer base_price
+        integer subscriber_limit
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    meal_components {
+        uuid id PK
+        uuid meal_plan_id FK
+        string name
+        integer price
+        boolean is_toggle
+        integer default_quantity
+        integer max_quantity
+        timestamp created_at
+    }
+
+    pickup_slots {
+        uuid id PK
+        uuid cook_id FK
+        string title
+        string address
+        time time
+        decimal latitude
+        decimal longitude
+        timestamp created_at
+    }
+
+    subscriptions {
+        uuid id PK
+        uuid user_id FK
+        uuid meal_plan_id FK
+        uuid pickup_location_id FK
+        date start_date
+        date end_date
+        enum status "active, paused, cancelled, completed"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    subscribed_meal_components {
+        uuid id PK
+        uuid subscription_id FK
+        uuid meal_component_id FK
+        integer quantity
+        integer price
+    }
+
+    orders {
+        uuid id PK
+        uuid subscription_id FK
+        date order_date
+        integer price
+        enum status "scheduled, prepared, picked_up, missed, cancelled"
+        integer total_price
+        timestamp created_at
+    }
+
+    order_notes {
+        uuid id PK
+        uuid order_id FK
+        text note
+        timestamp created_at
+    }
+
+    payments {
+        uuid id PK
+        uuid user_id FK
+        uuid subscription_id FK
+        integer amount
+        enum method "upi, card"
+        enum status "pending, success, failed"
+        timestamp created_at
+    }
+
+    reviews {
+        uuid id PK
+        uuid user_id FK
+        uuid cook_id FK
+        integer rating
+        text comment
+        timestamp created_at
+    }
+
+    users ||--o| cook_profiles : "1:1 configures"
+    users ||--o{ subscriptions : "subscribes"
+    users ||--o{ payments : "makes"
+    users ||--o{ reviews : "writes"
+    
+    cook_profiles ||--o{ meal_plans : "creates"
+    cook_profiles ||--o{ pickup_slots : "offers"
+    cook_profiles ||--o{ reviews : "receives"
+    
+    meal_plans ||--o{ meal_components : "contains"
+    meal_plans ||--o{ subscriptions : "has"
+    
+    pickup_slots ||--o{ subscriptions : "used_by"
+    
+    subscriptions ||--o{ subscribed_meal_components : "customizes"
+    subscriptions ||--o{ orders : "generates"
+    subscriptions ||--o{ payments : "paid_via"
+
+    meal_components ||--o{ subscribed_meal_components : "referenced_in"
+    
+    orders ||--o| order_notes : "has optional"
+        </div>
+    </div>
+
+
+    <h2>Sample Dummy Data</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">illustrative rows to understand how data ties together.</p>
+
+    <h3>1. users</h3>
+    <div class="dummy-data">
+        <table>
+            <tr><th>id (PK)</th><th>name</th><th>email</th><th>role</th><th>is_active</th></tr>
+            <tr><td>usr_1</td><td>Krishna</td><td>krishna@consumer.com</td><td>consumer</td><td>true</td></tr>
+            <tr><td>usr_2</td><td>Priya</td><td>priya@mymeal.com</td><td>cook</td><td>true</td></tr>
+            <tr><td>usr_3</td><td>Aditi</td><td>aditi@mymeal.com</td><td>cook</td><td>true</td></tr>
+        </table>
+    </div>
+
+    <h3>2. cook_profiles</h3>
+    <div class="dummy-data">
+        <table>
+            <tr><th>id (PK)</th><th>user_id (FK)</th><th>kitchen_name</th><th>city</th><th>phone</th></tr>
+            <tr><td>ckp_1</td><td>usr_2</td><td>Priya's Authentic Veg</td><td>Bangalore</td><td>+919876543210</td></tr>
+            <tr><td>ckp_2</td><td>usr_3</td><td>Aditi's Home Kitchen</td><td>Mumbai</td><td>+919876543211</td></tr>
+        </table>
+    </div>
+
+    <h3>3. meal_plans</h3>
+    <div class="dummy-data">
+        <table>
+            <tr><th>id (PK)</th><th>cook_id (FK)</th><th>title</th><th>base_price</th><th>subscriber_limit</th></tr>
+            <tr><td>mp_1</td><td>ckp_1</td><td>North Indian Dinner Combo</td><td>120</td><td>20</td></tr>
+            <tr><td>mp_2</td><td>ckp_2</td><td>Healthy Keto Lunch</td><td>150</td><td>15</td></tr>
+        </table>
+    </div>
+
+    <h3>4. meal_components</h3>
+    <div class="dummy-data">
+        <table>
+            <tr><th>id (PK)</th><th>meal_plan_id (FK)</th><th>name</th><th>price</th><th>is_toggle</th><th>default_qty</th></tr>
+            <tr><td>mc_1</td><td>mp_1</td><td>Chapati</td><td>10</td><td>false</td><td>3</td></tr>
+            <tr><td>mc_2</td><td>mp_1</td><td>Paneer Butter Masala</td><td>50</td><td>false</td><td>1</td></tr>
+            <tr><td>mc_3</td><td>mp_1</td><td>Dal Tadka</td><td>30</td><td>false</td><td>1</td></tr>
+            <tr><td>mc_4</td><td>mp_1</td><td>Salad</td><td>5</td><td>true</td><td>false</td></tr>
+        </table>
+    </div>
+
+    <h3>5. pickup_slots</h3>
+    <div class="dummy-data">
+        <table>
+            <tr><th>id (PK)</th><th>cook_id (FK)</th><th>title</th><th>address</th><th>time</th></tr>
+            <tr><td>pl_1</td><td>ckp_1</td><td>Main Gate, Tech Park</td><td>Block B, Whitefield</td><td>3:00 pm</td></tr>
+            <tr><td>pl_2</td><td>ckp_1</td><td>Home Kitchen Pickup</td><td>HSR Layout, Sector 2</td><td>3:30 pm</td></tr>
+        </table>
+    </div>
+
+    <h3>6. subscriptions</h3>
+    <div class="dummy-data">
+        <table>
+            <tr><th>id (PK)</th><th>user_id (FK)</th><th>meal_plan_id (FK)</th><th>pickup_slot_id (FK)</th><th>status</th></tr>
+            <tr><td>sub_1</td><td>usr_1</td><td>mp_1</td><td>pl_1</td><td>active</td></tr>
+        </table>
+    </div>
+
+    <h3>7. subscribed_meal_components</h3>
+    <div class="dummy-data">
+        <table>
+            <tr><th>id (PK)</th><th>subscription_id (FK)</th><th>meal_component_id (FK)</th><th>quantity</th><th>price</th></tr>
+            <tr><td>smc_1</td><td>sub_1</td><td>mc_1</td><td>4 (extra roti)</td><td>40</td></tr>
+            <tr><td>smc_2</td><td>sub_1</td><td>mc_2</td><td>1</td><td>50</td></tr>
+            <tr><td>smc_3</td><td>sub_1</td><td>mc_3</td><td>1</td><td>30</td></tr>
+        </table>
+    </div>
+
+    <h3>8. orders</h3>
+    <div class="dummy-data">
+        <table>
+            <tr><th>id (PK)</th><th>subscription_id (FK)</th><th>order_date</th><th>price</th><th>status</th><th>total_price</th></tr>
+            <tr><td>ord_1</td><td>sub_1</td><td>2026-03-11</td><td>120 (40+50+30)</td><td>scheduled</td><td>120</td></tr>
+            <tr><td>ord_2</td><td>sub_1</td><td>2026-03-10</td><td>120</td><td>picked_up</td><td>120</td></tr>
+        </table>
+    </div>
+
+</div>
+
+<!-- Mermaid JS Import -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'default',
+        securityLevel: 'loose',
+        er: {
+            layoutDirection: 'TB',
+            minEntityWidth: 150,
+            minEntityHeight: 75,
+            entityPadding: 15,
+            stroke: 'gray',
+            fill: 'white',
+            fontSize: 14
+        }
+    });
+</script>
+
+</body>
+</html>
