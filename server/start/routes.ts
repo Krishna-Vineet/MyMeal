@@ -21,13 +21,15 @@ router.get('/health', () => {
 
 const AuthController = () => import('#controllers/auth_controller')
 
+const CookProfilesController = () => import('#controllers/cook_profiles_controller')
+
 router
   .group(() => {
     router
       .group(() => {
         router.post('register', [AuthController, 'register'])
         router.post('login', [AuthController, 'login'])
-        
+
         // Protected Route
         router.post('logout', [AuthController, 'logout']).use(middleware.auth())
       })
@@ -41,5 +43,34 @@ router
       .prefix('account')
       .as('profile')
       .use(middleware.auth())
+
+    router
+      .group(() => {
+        router.post('/', [CookProfilesController, 'store'])
+        router.patch('/', [CookProfilesController, 'update'])
+      })
+      .prefix('cook-profiles')
+      .use([middleware.auth(), middleware.role('cook')])
+
+    const MealPlansController = () => import('#controllers/meal_plans_controller')
+
+    router
+      .group(() => {
+        router.get('/', [MealPlansController, 'index'])
+        router.post('/', [MealPlansController, 'store'])
+        router.patch('/:id', [MealPlansController, 'update'])
+      })
+      .prefix('meal-plans')
+      .use([middleware.auth(), middleware.role('cook')])
+
+    const DiscoversController = () => import('#controllers/discovers_controller')
+
+    router
+      .group(() => {
+        router.get('/cooks', [DiscoversController, 'index'])
+        router.get('/cooks/:id', [DiscoversController, 'show'])
+      })
+      .prefix('discover')
+      .use([middleware.auth(), middleware.role('consumer')])
   })
   .prefix('/api/v1')

@@ -1715,5 +1715,164 @@ consumer meal discovery
 
 Phase 3 will make **MyMeal usable by cooks for the first time**.
 
+
 ---
+
+# MyMeal — Phase 3 Report
+
+**Project:** MyMeal
+**Phase:** Phase 3 — Cook Platform & Meal Discovery
+**Goal:** Implement the primary application workflows for cooks to onboard and for consumers to discover meal plans.
+
+Phase 3 transforms the data models created in Phase 2 into **active application features**, enabling the core "Cook Onboarding" and "Meal Discovery" flows.
+
+---
+
+# 1. Objectives of Phase 3
+
+The primary goals of this phase were:
+
+* Implement Cook Profile management (Onboarding)
+* Create a consolidated Meal Plan creation system
+* Ensure transactional integrity for complex data structures
+* Build the Consumer Discovery API (Map & List view)
+* Implement role-based authorization for all new APIs
+* Enable deep preloading for efficient frontend data fetching
+
+---
+
+# 2. Cook Onboarding System
+
+Cooks can now formally establish their presence on the platform.
+
+**Endpoints:**
+```text
+POST  /api/v1/cook-profiles
+PATCH /api/v1/cook-profiles
+```
+
+**Features:**
+* **Middleware Protected**: Only users with the `cook` role can access these.
+* **Validation**: Strict validation of kitchen name, phone, bio, and bio location (lat/lng).
+* **Profile Logic**: Prevents a user from creating multiple cook profiles.
+
+---
+
+# 3. Consolidated Meal Plan Engine
+
+To support a seamless "Slider UI" (Wizard) on the frontend, we implemented a consolidated creation flow.
+
+**Endpoint:**
+```text
+POST /api/v1/meal-plans
+```
+
+**Architectural Decision:**
+Instead of high-frequency individual API calls, the frontend sends the **entire meal plan**, including all **components** and **pickup slots**, in a single request.
+
+**Transactional Integrity:**
+The backend uses **Database Transactions**. If saving any part (e.g., a pickup slot) fails, the entire meal plan is rolled back. This ensures a "zero-orphaned-data" state.
+
+---
+
+# 4. Meal Component & Slot Management
+
+Components and slots are now fully operational within the Meal Plan ecosystem.
+
+**Stored Data:**
+* **Components**: Roti, Rice, Sabzi, etc., with price and quantity limits.
+* **Pickup Slots**: Specific locations and times where consumers can collect meals.
+
+These are managed transactionally during Meal Plan creation and updates.
+
+---
+
+# 5. Consumer Discovery API
+
+The system now powers the core "Map Discovery" experience for consumers.
+
+**Endpoints:**
+```text
+GET /api/v1/discover/cooks
+GET /api/v1/discover/cooks/:id
+```
+
+**Features:**
+* **Coordinate-Ready**: The index return geolocation data (lat/lng) for map pins.
+* **Deep Preloading**: The detail API fetches the cook profile, their active meal plans, AND all associated components/slots in a single query.
+* **Efficiency**: This minimizes "waterfall" requests on the frontend, making the app feel incredibly fast.
+
+---
+
+# 6. Security & Authorization
+
+Every endpoint in Phase 3 is secured by our custom **Role System**.
+
+**Enforced Rules:**
+* **Auth Middleware**: Ensures user is logged in.
+* **Role Middleware**:
+    * Only `cook` can create profiles or meal plans.
+    * Only `consumer` can access the discovery engine.
+* **Owner Validation**: Cooks can only modify their own meal plans.
+
+---
+
+# 7. Production Design Decisions
+
+* **Transactional Creation**: Used `db.transaction` to ensure atomic writes for recursive data structures.
+* **Wizard-Friendly Payloads**: Designed validators to accept nested arrays of components and slots.
+* **Data Flattening**: The Discovery API flattens complex relationships to provide the frontend with ready-to-use JSON objects.
+
+---
+
+# 8. Phase 3 Outcome
+
+At the end of Phase 3, the MyMeal platform is functionally ready for its two main users:
+
+```text
+✔ Cooks can create kitchen profiles
+✔ Cooks can publish multi-component meal plans
+✔ Cooks can define various pickup locations
+✔ Consumers can view all nearby cooks on a map
+✔ Consumers can view complete menus for specific cooks
+✔ Role security is enforced across the board
+✔ Database transactions ensure data integrity
+```
+
+The platform is now **"Discovery-Ready"**.
+
+---
+
+# 9. Next Phase
+
+Next phase:
+
+```text
+Phase 4 — Subscriptions & Orders
+```
+
+Focus areas:
+
+```text
+Subscription creation & customization
+Advance payment tracking
+Automated daily order generation
+Order note communication
+Order status management (prepared/picked_up)
+```
+
+Phase 4 will enable the **core transaction loop** of the MyMeal business model.
+
+---
+
+
+
+
+
+
+
+
+
+
+
 

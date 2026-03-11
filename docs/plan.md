@@ -589,7 +589,6 @@ Features:
 ```
 Create cook profile
 Update cook profile
-Add kitchen location
 Create meal plans
 Add meal components
 Create pickup slots
