@@ -85,8 +85,10 @@ export class MealComponentSchema extends BaseModel {
 }
 
 export class MealPlanSchema extends BaseModel {
-  static $columns = ['bannerImage', 'basePrice', 'cookId', 'createdAt', 'description', 'id', 'isActive', 'subscriberLimit', 'title', 'updatedAt', 'validityType'] as const
+  static $columns = ['availableDurations', 'bannerImage', 'basePrice', 'cookId', 'createdAt', 'description', 'id', 'isActive', 'subscriberLimit', 'title', 'updatedAt', 'validityType'] as const
   $columns = MealPlanSchema.$columns
+  @column()
+  declare availableDurations: any
   @column()
   declare bannerImage: string | null
   @column()
@@ -232,10 +234,16 @@ export class SubscribedMealComponentSchema extends BaseModel {
 }
 
 export class SubscriptionSchema extends BaseModel {
-  static $columns = ['createdAt', 'endDate', 'id', 'mealPlanId', 'pickupSlotId', 'startDate', 'status', 'updatedAt', 'userId'] as const
+  static $columns = ['amountConsumed', 'amountPaid', 'createdAt', 'duration', 'endDate', 'id', 'mealPlanId', 'pickupSlotId', 'startDate', 'status', 'totalPrice', 'updatedAt', 'userId'] as const
   $columns = SubscriptionSchema.$columns
+  @column()
+  declare amountConsumed: string
+  @column()
+  declare amountPaid: string
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
+  @column()
+  declare duration: string
   @column.date()
   declare endDate: DateTime | null
   @column({ isPrimary: true })
@@ -248,6 +256,8 @@ export class SubscriptionSchema extends BaseModel {
   declare startDate: DateTime | null
   @column()
   declare status: string | null
+  @column()
+  declare totalPrice: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()

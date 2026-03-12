@@ -11,6 +11,8 @@ export const createSubscriptionValidator = vine.compile(
         pickupSlotId: vine.string().trim(),
         startDate: vine.string().trim(),
         endDate: vine.string().trim().optional(),
+        duration: vine.enum(['one_time', '1_week', '2_week', '1_month', '3_month']).optional(),
+        advancePayment: vine.number().min(0).optional(),
         
         components: vine.array(
             vine.object({

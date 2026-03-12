@@ -9,6 +9,39 @@ import { DateTime } from 'luxon'
 export default class SubscriptionsController {
 
     /**
+     * Helper to calculate end date and count valid days based on validityType
+     */
+    private calculateSubscriptionRange(startDate: DateTime, duration: string, validityType: string) {
+        let endDate: DateTime
+        
+        switch (duration) {
+            case 'one_time': endDate = startDate; break
+            case '1_week': endDate = startDate.plus({ weeks: 1 }).minus({ days: 1 }); break
+            case '2_week': endDate = startDate.plus({ weeks: 2 }).minus({ days: 1 }); break
+            case '1_month': endDate = startDate.plus({ months: 1 }).minus({ days: 1 }); break
+            case '3_month': endDate = startDate.plus({ months: 3 }).minus({ days: 1 }); break
+            default: endDate = startDate.plus({ months: 1 }).minus({ days: 1 })
+        }
+
+        let validDays = 0
+        let current = startDate
+
+        while (current <= endDate) {
+            const day = current.weekday // 1-7 (Mon-Sun)
+            if (validityType === 'all_days') {
+                validDays++
+            } else if (validityType === 'weekdays' && day <= 5) {
+                validDays++
+            } else if (validityType === 'weekends' && day >= 6) {
+                validDays++
+            }
+            current = current.plus({ days: 1 })
+        }
+
+        return { endDate, validDays }
+    }
+
+    /**
      * Subscribe a consumer to a meal plan
      */
     async store({ request, auth, response }: HttpContext) {
@@ -21,74 +54,191 @@ export default class SubscriptionsController {
             .where('isActive', true)
             .first()
 
-        if (!mealPlan) {
-            return response.notFound({ message: 'Active meal plan not found' })
+        if (!mealPlan) return response.notFound({ message: 'Active meal plan not found' })
+
+        // 2. Validate Pickup Slot
+        const slot = await mealPlan.related('pickupSlots').query().where('id', payload.pickupSlotId).first()
+        if (!slot) return response.badRequest({ message: 'Invalid pickup slot' })
+
+        // 3. Calculation Logic
+        const start = DateTime.fromISO(payload.startDate)
+        const duration = payload.duration || '1_month'
+        const { endDate, validDays } = this.calculateSubscriptionRange(start, duration, mealPlan.validityType)
+
+        if (validDays === 0) {
+            return response.badRequest({ message: 'No valid days found in the selected duration' })
         }
 
-        // 2. Validate Pickup Slot belongs to the meal plan
-        const slot = await mealPlan.related('pickupSlots').query()
-            .where('id', payload.pickupSlotId)
-            .first()
-        
-        if (!slot) {
-            return response.badRequest({ message: 'The selected pickup slot does not belong to this meal plan' })
+        // 4. Calculate Daily Extra Price from Components
+        const componentIds = payload.components.map(c => c.mealComponentId)
+        const mealComponents = await MealComponent.query().whereIn('id', componentIds)
+
+        let dailyExtraPrice = 0
+        const subComponentsData = payload.components.map(item => {
+            const original = mealComponents.find(mc => mc.id === item.mealComponentId)
+            if (!original) throw new Error(`Component ${item.mealComponentId} not found`)
+
+            let itemExtraPrice = 0
+            if (original.isToggle) {
+                if (item.enabled) itemExtraPrice = original.price || 0
+            } else {
+                const extraQty = item.quantity - (original.defaultQuantity || 0)
+                if (extraQty > 0) itemExtraPrice = extraQty * (original.price || 0)
+            }
+
+            dailyExtraPrice += itemExtraPrice
+
+            return {
+                mealComponentId: item.mealComponentId,
+                quantity: item.quantity,
+                enabled: item.enabled ?? true,
+                price: original.price
+            }
+        })
+
+        const dailyTotal = Number(mealPlan.basePrice) + dailyExtraPrice
+        const totalPrice = dailyTotal * validDays
+
+        // 4.5. Verify Advance Payment (Minimum 10%)
+        const minAdvance = 0.1 * totalPrice
+        const advance = payload.advancePayment || 0
+        if (advance < minAdvance) {
+            return response.badRequest({ 
+                message: `Minimum 10% advance (₹${minAdvance.toFixed(2)}) is required to confirm subscription.`,
+                totalPrice,
+                minAdvance
+            })
         }
 
-        // 3. Start Transaction
+        // 5. Transaction
         const trx = await db.transaction()
 
         try {
-            // Create the main subscription record
             const subscription = new Subscription()
             subscription.userId = user.id
             subscription.mealPlanId = payload.mealPlanId
             subscription.pickupSlotId = payload.pickupSlotId
-            subscription.startDate = DateTime.fromISO(payload.startDate)
-            if (payload.endDate) {
-                subscription.endDate = DateTime.fromISO(payload.endDate)
-            }
+            subscription.startDate = start
+            subscription.endDate = endDate
+            subscription.duration = duration
+            subscription.totalPrice = totalPrice.toString()
             subscription.status = 'active'
+            subscription.amountPaid = advance.toString() 
+            subscription.amountConsumed = '0'
             
             subscription.useTransaction(trx)
             await subscription.save()
-
-            // 4. Create Subscribed Components (Snapshotting prices)
-            const componentIds = payload.components.map(c => c.mealComponentId)
-            const mealComponents = await MealComponent.query().whereIn('id', componentIds)
-
-            const subComponentsData = payload.components.map(item => {
-                const original = mealComponents.find(mc => mc.id === item.mealComponentId)
-                if (!original) throw new Error(`Specific meal component ${item.mealComponentId} was not found`)
-
-                return {
-                    mealComponentId: item.mealComponentId,
-                    quantity: item.quantity,
-                    enabled: item.enabled ?? true,
-                    price: original.price // THIS IS CRITICAL: Snapshots the price at time of subscription
-                }
-            })
 
             await subscription.related('subscribedMealComponents').createMany(subComponentsData)
 
             await trx.commit()
 
-            // Return full subscription object back to frontend
             await subscription.load('subscribedMealComponents')
-            await subscription.load('mealPlan')
-            await subscription.load('pickupSlot')
 
             return response.created({
-                message: 'Meal plan subscribed successfully!',
+                message: 'Subscription confirmed!',
+                totalPrice,
+                validDays,
+                dailyTotal,
                 subscription
             })
 
         } catch (error) {
             await trx.rollback()
-            console.error('Subscription failed:', error)
-            return response.internalServerError({ 
-                message: 'Failed to create subscription', 
-                error: (error as Error).message 
-            })
+            return response.internalServerError({ message: 'Failed to create subscription', error: (error as Error).message })
+        }
+    }
+
+    /**
+     * Show detailed subscription
+     */
+    async show({ params, auth, response }: HttpContext) {
+        const user = auth.user!
+        const subscription = await Subscription.query()
+            .where('id', params.id)
+            .where('userId', user.id)
+            .preload('mealPlan', (q) => q.preload('cook'))
+            .preload('pickupSlot')
+            .preload('subscribedMealComponents', (q) => q.preload('mealComponent'))
+            .first()
+
+        if (!subscription) return response.notFound({ message: 'Subscription not found' })
+
+        // Calculate due
+        const due = parseFloat(subscription.amountConsumed) - parseFloat(subscription.amountPaid)
+
+        return response.ok({
+            subscription,
+            financials: {
+                totalPrice: parseFloat(subscription.totalPrice),
+                amountPaid: parseFloat(subscription.amountPaid),
+                amountConsumed: parseFloat(subscription.amountConsumed),
+                due: due
+            }
+        })
+    }
+
+    /**
+     * Update subscription (Edit components/slot)
+     */
+    async update({ params, request, auth, response }: HttpContext) {
+        const user = auth.user!
+        const subscription = await Subscription.query()
+            .where('id', params.id)
+            .where('userId', user.id)
+            .preload('mealPlan')
+            .preload('subscribedMealComponents')
+            .first()
+
+        if (!subscription) return response.notFound({ message: 'Subscription not found' })
+
+        const payload = await request.validateUsing(createSubscriptionValidator) // Reusing structure for edit
+
+        const trx = await db.transaction()
+
+        try {
+            subscription.useTransaction(trx)
+
+            // 1. Update Pickup Slot if changed
+            if (payload.pickupSlotId) {
+                subscription.pickupSlotId = payload.pickupSlotId
+            }
+
+            // 2. Update Components if provided
+            if (payload.components) {
+                // For MVP, we replace components (snapshot prices again)
+                const componentIds = payload.components.map(c => c.mealComponentId)
+                const mealComponents = await MealComponent.query().whereIn('id', componentIds)
+
+                // Delete old SubscribedMealComponents
+                await db.from('subscribed_meal_components').where('subscription_id', subscription.id).delete().useTransaction(trx)
+
+                const subComponentsData = payload.components.map(item => {
+                    const original = mealComponents.find(mc => mc.id === item.mealComponentId)
+                    if (!original) throw new Error(`Component ${item.mealComponentId} not found`)
+                    return {
+                        subscriptionId: subscription.id,
+                        mealComponentId: item.mealComponentId,
+                        quantity: item.quantity,
+                        enabled: item.enabled ?? true,
+                        price: original.price
+                    }
+                })
+
+                await trx.table('subscribed_meal_components').insert(subComponentsData)
+                
+                // Recalculate totalPrice logic would go here if we were to adjust mid-subscription
+                // For now, we update the components for future orders.
+            }
+
+            await subscription.save()
+            await trx.commit()
+
+            return response.ok({ message: 'Subscription updated successfully', subscription })
+
+        } catch (error) {
+            await trx.rollback()
+            return response.internalServerError({ message: 'Update failed', error: (error as Error).message })
         }
     }
 
@@ -101,17 +251,17 @@ export default class SubscriptionsController {
             .where('userId', user.id)
             .preload('mealPlan', (q) => q.preload('cook'))
             .preload('pickupSlot')
-            .preload('subscribedMealComponents', (q) => q.preload('mealComponent'))
             .orderBy('createdAt', 'desc')
 
         return response.ok(subscriptions)
     }
 
     /**
-     * Cancel a subscription
+     * Pause or Cancel subscription with financial checks
      */
-    async destroy({ params, auth, response }: HttpContext) {
+    async updateStatus({ params, request, auth, response }: HttpContext) {
         const user = auth.user!
+        const { status } = request.all()
         const subscription = await Subscription.query()
             .where('id', params.id)
             .where('userId', user.id)
@@ -119,9 +269,15 @@ export default class SubscriptionsController {
 
         if (!subscription) return response.notFound({ message: 'Subscription not found' })
 
-        subscription.status = 'cancelled'
+        const due = parseFloat(subscription.amountConsumed) - parseFloat(subscription.amountPaid)
+
+        if (status === 'cancelled' && due > 0) {
+            return response.badRequest({ message: `Cannot cancel subscription with outstanding dues: ₹${due}. Please pay first.` })
+        }
+
+        subscription.status = status
         await subscription.save()
 
-        return response.ok({ message: 'Subscription cancelled successfully' })
+        return response.ok({ message: `Subscription ${status}`, subscription })
     }
 }

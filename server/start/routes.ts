@@ -78,8 +78,10 @@ router
     router
       .group(() => {
         router.get('/', [SubscriptionsController, 'index'])
+        router.get('/:id', [SubscriptionsController, 'show'])
         router.post('/', [SubscriptionsController, 'store'])
-        router.delete('/:id', [SubscriptionsController, 'destroy'])
+        router.patch('/:id', [SubscriptionsController, 'update'])
+        router.patch('/:id/status', [SubscriptionsController, 'updateStatus'])
       })
       .prefix('subscriptions')
       .use([middleware.auth(), middleware.role('consumer')])

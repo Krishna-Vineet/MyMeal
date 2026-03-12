@@ -9,6 +9,7 @@ export const createMealPlanValidator = vine.compile(
         bannerImage: vine.string().trim().optional(),
         isActive: vine.boolean().optional(),
         validityType: vine.enum(['weekdays', 'weekends', 'all_days']).optional(),
+        availableDurations: vine.array(vine.enum(['one_time', '1_week', '2_week', '1_month', '3_month'])).optional(),
 
         components: vine.array(
             vine.object({
@@ -41,6 +42,7 @@ export const updateMealPlanValidator = vine.compile(
         bannerImage: vine.string().trim().optional(),
         isActive: vine.boolean().optional(),
         validityType: vine.enum(['weekdays', 'weekends', 'all_days']).optional(),
+        availableDurations: vine.array(vine.enum(['one_time', '1_week', '2_week', '1_month', '3_month'])).optional(),
 
         // For MVP, we allow optional array replacement for components/slots in PATCH
         components: vine.array(

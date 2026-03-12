@@ -1843,6 +1843,7 @@ The platform is now **"Discovery-Ready"**.
 
 ---
 
+
 # 9. Next Phase
 
 Next phase:
@@ -1862,6 +1863,61 @@ Order status management (prepared/picked_up)
 ```
 
 Phase 4 will enable the **core transaction loop** of the MyMeal business model.
+
+
+
+---
+
+# MyMeal — Phase 4 Report
+
+**Project:** MyMeal
+**Phase:** Phase 4 — Enhanced Discovery & Core Subscriptions
+**Goal:** Empower consumers to find cooks using advanced search/geo filters and enable the initial subscription flow.
+
+### 1. Advanced Discovery Engine
+The discovery system was upgraded for production-ready search and map integration.
+- **Geospatial Filtering**: Consumers can now filter cooks within a relative radius using `lat`, `lng`, and `radius` parameters.
+- **Searchable Marketplace**: Added keyword search (`?q=keyword`) that matches against both Cook Name and Kitchen Name.
+- **Map Pins**: The API structure is optimized for high-performance map rendering.
+
+### 2. Meal Availability (Validity Type)
+Implemented business logic for meal availability schedules.
+- Added `validity_type` to Meal Plans: `weekdays`, `weekends`, or `all_days`.
+- Ensures consumers only subscribe to plans on days they are actually available.
+
+### 3. Core Subscription System
+The first version of the Subscription system was launched.
+- **Transactional Links**: Automatic association of meal plans, components, and pickup slots.
+- **Price Security**: Component prices are "snapshotted" at the moment of subscription.
+
+---
+
+# MyMeal — Phase 5 Report
+
+**Project:** MyMeal
+**Phase:** Phase 5 — Advanced Subscriptions & Financials
+**Goal:** Implement the complex business rules for long-term subscriptions, including financial tracking and variable durations.
+
+### 1. Variable Durations & Smart Scheduling
+Subscriptions are no longer just "indefinite".
+- **Duration Enums**: Supported durations include `one_time`, `1_week`, `2_week`, `1_month`, and `3_month`.
+- **Intelligent End-Date Calculation**: The system automatically calculates the `endDate` and counts "Valid Days" (e.g., total weekdays in a month) for pricing.
+
+### 2. Financial Tracking Ledger
+Subscriptions now act as a financial ledger.
+- **Fields**: Tracks `total_price`, `amount_paid`, and `amount_consumed`.
+- **Due System**: Real-time calculation of `amount_consumed - amount_paid`.
+- **10% Advance Rule**: Enforced a business rule requiring at least 10% advance payment to confirm a subscription.
+
+### 3. Advanced Subscription Management
+- **Detailed View**: A new specialized API for consumers to view their subscription state and financials.
+- **Pause & Cancel Logic**: 
+    - **Pausing**: Allowed for temporary stops.
+    - **Cancellation**: Blocked if there are outstanding dues. Users must clear debt before leaving.
+- **Edit Support**: Consumers can now update their preferred components or pickup slots mid-subscription.
+
+### 4. Outcome
+Phase 5 completes the **"Transaction Loop"**. The platform is now ready for **Automated Order Generation** and **Daily Fulfillment**.
 
 ---
 
