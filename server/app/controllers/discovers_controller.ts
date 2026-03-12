@@ -6,10 +6,41 @@ export default class DiscoversController {
     /**
      * List all cooks (for map pins and discovery tiles)
      */
-    async index({ response }: HttpContext) {
-        const cooks = await CookProfile.query()
-            .select('id', 'kitchen_name', 'bio', 'latitude', 'longitude', 'image', 'city', 'address')
+    async index({ request, response }: HttpContext) {
+        const { q, lat, lng, radius } = request.qs()
 
+        const query = CookProfile.query()
+            .preload('user')
+            .select('*')
+
+        if (q) {
+            // We join with users to search by cook's name
+            query.whereHas('user', (userQuery) => {
+                userQuery.whereILike('name', `%${q}%`)
+            }).orWhereILike('kitchenName', `%${q}%`)
+        }
+
+        // Basic Geo-filtering (Bounding Box MVP)
+        if (lat && lng) {
+            const r = parseFloat(radius || '10')
+            const latitude = parseFloat(lat)
+            const longitude = parseFloat(lng)
+
+            // 1 degree ~ 111km
+            const latDelta = r / 111
+            const lngDelta = r / (111 * Math.cos(latitude * Math.PI / 180))
+
+            query.whereBetween('latitude', [
+                (latitude - latDelta).toString(), 
+                (latitude + latDelta).toString()
+            ])
+            .whereBetween('longitude', [
+                (longitude - lngDelta).toString(), 
+                (longitude + lngDelta).toString()
+            ])
+        }
+
+        const cooks = await query
         return response.ok(cooks)
     }
 

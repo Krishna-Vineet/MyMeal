@@ -85,7 +85,7 @@ export class MealComponentSchema extends BaseModel {
 }
 
 export class MealPlanSchema extends BaseModel {
-  static $columns = ['bannerImage', 'basePrice', 'cookId', 'createdAt', 'description', 'id', 'isActive', 'subscriberLimit', 'title', 'updatedAt'] as const
+  static $columns = ['bannerImage', 'basePrice', 'cookId', 'createdAt', 'description', 'id', 'isActive', 'subscriberLimit', 'title', 'updatedAt', 'validityType'] as const
   $columns = MealPlanSchema.$columns
   @column()
   declare bannerImage: string | null
@@ -107,6 +107,8 @@ export class MealPlanSchema extends BaseModel {
   declare title: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+  @column()
+  declare validityType: string
 }
 
 export class OrderNoteSchema extends BaseModel {

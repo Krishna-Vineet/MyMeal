@@ -72,5 +72,16 @@ router
       })
       .prefix('discover')
       .use([middleware.auth(), middleware.role('consumer')])
+
+    const SubscriptionsController = () => import('#controllers/subscriptions_controller')
+
+    router
+      .group(() => {
+        router.get('/', [SubscriptionsController, 'index'])
+        router.post('/', [SubscriptionsController, 'store'])
+        router.delete('/:id', [SubscriptionsController, 'destroy'])
+      })
+      .prefix('subscriptions')
+      .use([middleware.auth(), middleware.role('consumer')])
   })
   .prefix('/api/v1')

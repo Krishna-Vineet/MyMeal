@@ -46,6 +46,7 @@ export default class MealPlansController {
             mealPlan.subscriberLimit = payload.subscriberLimit || null
             mealPlan.bannerImage = payload.bannerImage || null
             mealPlan.isActive = payload.isActive ?? true
+            mealPlan.validityType = payload.validityType || 'all_days'
             mealPlan.cookId = cookProfile.id
 
             mealPlan.useTransaction(trx)
