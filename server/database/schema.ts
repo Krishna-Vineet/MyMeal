@@ -114,7 +114,7 @@ export class MealPlanSchema extends BaseModel {
 }
 
 export class OrderNoteSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'note', 'orderId', 'updatedAt'] as const
+  static $columns = ['createdAt', 'id', 'note', 'orderId', 'updatedAt', 'userId'] as const
   $columns = OrderNoteSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -126,6 +126,8 @@ export class OrderNoteSchema extends BaseModel {
   declare orderId: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+  @column()
+  declare userId: string | null
 }
 
 export class OrderSchema extends BaseModel {

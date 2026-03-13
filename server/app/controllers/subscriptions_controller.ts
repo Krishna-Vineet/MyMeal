@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Subscription from '#models/subscription'
 import MealPlan from '#models/meal_plan'
 import MealComponent from '#models/meal_component'
+import OrderService from '#services/order_service'
 import db from '@adonisjs/lucid/services/db'
 import { createSubscriptionValidator } from '#validators/subscription'
 import { DateTime } from 'luxon'
@@ -135,6 +136,10 @@ export default class SubscriptionsController {
 
             await subscription.load('subscribedMealComponents')
 
+            // Trigger Order Generation
+            const orderService = new OrderService()
+            await orderService.generateOrders(subscription)
+
             return response.created({
                 message: 'Subscription confirmed!',
                 totalPrice,
@@ -227,8 +232,9 @@ export default class SubscriptionsController {
 
                 await trx.table('subscribed_meal_components').insert(subComponentsData)
                 
-                // Recalculate totalPrice logic would go here if we were to adjust mid-subscription
-                // For now, we update the components for future orders.
+                // Trigger Order Refresh on Edit
+                const orderService = new OrderService()
+                await orderService.handleSubscriptionEdit(subscription)
             }
 
             await subscription.save()
@@ -277,6 +283,14 @@ export default class SubscriptionsController {
 
         subscription.status = status
         await subscription.save()
+
+        // Trigger Order Lifecycle
+        const orderService = new OrderService()
+        if (status === 'paused') {
+            await orderService.handleSubscriptionPause(subscription)
+        } else if (status === 'active') {
+            await orderService.handleSubscriptionResume(subscription)
+        }
 
         return response.ok({ message: `Subscription ${status}`, subscription })
     }

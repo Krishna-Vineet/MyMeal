@@ -85,5 +85,20 @@ router
       })
       .prefix('subscriptions')
       .use([middleware.auth(), middleware.role('consumer')])
+
+    const OrdersController = () => import('#controllers/orders_controller')
+    const OrderNotesController = () => import('#controllers/order_notes_controller')
+
+    router
+      .group(() => {
+        router.get('/cook', [OrdersController, 'indexForCook']).use(middleware.role('cook'))
+        router.get('/consumer', [OrdersController, 'indexForConsumer']).use(middleware.role('consumer'))
+        router.patch('/:id/status', [OrdersController, 'updateStatus']).use(middleware.role('cook'))
+        
+        router.get('/:id/notes', [OrderNotesController, 'index'])
+        router.post('/:id/notes', [OrderNotesController, 'store'])
+      })
+      .prefix('orders')
+      .use(middleware.auth())
   })
   .prefix('/api/v1')
