@@ -58,6 +58,17 @@ export default class SubscriptionsController {
 
         if (!mealPlan) return response.notFound({ message: 'Active meal plan not found' })
 
+        // 1.1 Check Capacity
+        const activeSubCount = await Subscription.query()
+            .where('mealPlanId', mealPlan.id)
+            .whereIn('status', ['active', 'paused'])
+            .count('* as total')
+        
+        const currentCount = parseInt(activeSubCount[0].$extras.total)
+        if (mealPlan.subscriberLimit && currentCount >= mealPlan.subscriberLimit) {
+            return response.badRequest({ message: 'This meal plan has reached its subscriber limit.' })
+        }
+
         // 2. Validate Pickup Slot
         const slot = await mealPlan.related('pickupSlots').query().where('id', payload.pickupSlotId).first()
         if (!slot) return response.badRequest({ message: 'Invalid pickup slot' })

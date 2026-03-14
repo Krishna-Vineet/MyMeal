@@ -1,6 +1,9 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Order from '#models/order'
 import OrderNote from '#models/order_note'
+import NotificationService from '#services/notification_service'
+
+const notificationService = new NotificationService()
 
 export default class OrderNotesController {
   /**
@@ -35,6 +38,9 @@ export default class OrderNotesController {
       userId: user.id,
       note: noteContent
     })
+
+    // Trigger notification async
+    notificationService.notifyNewOrderNote(note).catch(err => console.error('Failed to notify order note:', err))
 
     return response.created(note)
   }

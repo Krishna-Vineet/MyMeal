@@ -36,4 +36,9 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   // WhatsApp
   WA_API_KEY: Env.schema.string.optional(),
+
+  // Cloudinary
+  CLOUDINARY_CLOUD_NAME: Env.schema.string.optional(),
+  CLOUDINARY_API_KEY: Env.schema.string.optional(),
+  CLOUDINARY_API_SECRET: Env.schema.string.optional(),
 })

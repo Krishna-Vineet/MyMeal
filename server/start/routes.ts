@@ -107,10 +107,18 @@ router
       .group(() => {
         router.post('/', [PaymentsController, 'store']).use(middleware.role('consumer'))
         router.get('/subscription/:id', [PaymentsController, 'index']).use(middleware.role('consumer'))
-        router.get('/wallet', [PaymentsController, 'walletStatus']).use(middleware.role('cook'))
-        router.post('/payout', [PaymentsController, 'payout']).use(middleware.role('cook'))
+        router.get('/wallet/status', [PaymentsController, 'walletStatus']).as('wallet.status')
+        router.post('/payout', [PaymentsController, 'payout']).as('payout')
       })
       .prefix('payments')
       .use(middleware.auth())
+
+    const ReviewsController = () => import('#controllers/reviews_controller')
+
+    // Reviews
+    router.group(() => {
+      router.post('/', [ReviewsController, 'store']).as('reviews.store')
+      router.get('/cook/:id', [ReviewsController, 'index']).as('reviews.index')
+    }).prefix('reviews').use(middleware.auth())
   })
   .prefix('/api/v1')

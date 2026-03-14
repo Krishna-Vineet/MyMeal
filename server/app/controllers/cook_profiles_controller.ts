@@ -1,6 +1,9 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import CookProfile from '#models/cook_profile'
 import { createCookProfileValidator, updateCookProfileValidator } from '#validators/cook_profile'
+import CloudinaryService from '#services/cloudinary_service'
+
+const cloudinary = new CloudinaryService()
 
 export default class CookProfilesController {
 
@@ -16,6 +19,14 @@ export default class CookProfilesController {
         }
 
         const payload = await request.validateUsing(createCookProfileValidator)
+
+        // Handle Image Uploads
+        if (payload.kitchenImage) {
+            payload.kitchenImage = await cloudinary.uploadImage(payload.kitchenImage)
+        }
+        if (payload.bannerImage) {
+            payload.bannerImage = await cloudinary.uploadImage(payload.bannerImage)
+        }
 
         const profile = await user.related('cookProfile').create(payload)
 
@@ -37,6 +48,14 @@ export default class CookProfilesController {
         }
 
         const payload = await request.validateUsing(updateCookProfileValidator)
+
+        // Handle Image Uploads
+        if (payload.kitchenImage) {
+            payload.kitchenImage = await cloudinary.uploadImage(payload.kitchenImage)
+        }
+        if (payload.bannerImage) {
+            payload.bannerImage = await cloudinary.uploadImage(payload.bannerImage)
+        }
 
         profile.merge(payload)
         await profile.save()
