@@ -3,6 +3,9 @@ import MealPlan from '#models/meal_plan'
 import CookProfile from '#models/cook_profile'
 import { createMealPlanValidator, updateMealPlanValidator } from '#validators/meal_plan'
 import db from '@adonisjs/lucid/services/db'
+import CloudinaryService from '#services/cloudinary_service'
+
+const cloudinary = new CloudinaryService()
 
 export default class MealPlansController {
 
@@ -44,7 +47,14 @@ export default class MealPlansController {
             mealPlan.description = payload.description || null
             mealPlan.basePrice = payload.basePrice
             mealPlan.subscriberLimit = payload.subscriberLimit || null
-            mealPlan.bannerImage = payload.bannerImage || null
+            
+            // Handle Image Upload
+            if (payload.bannerImage) {
+                mealPlan.bannerImage = await cloudinary.uploadImage(payload.bannerImage)
+            } else {
+                mealPlan.bannerImage = null
+            }
+
             mealPlan.isActive = payload.isActive ?? true
             mealPlan.validityType = payload.validityType || 'all_days'
             mealPlan.availableDurations = payload.availableDurations || ['1_week', '1_month']
@@ -102,6 +112,11 @@ export default class MealPlansController {
         const mergedPayload = { ...payload }
         delete mergedPayload.components
         delete mergedPayload.pickupSlots
+
+        // Handle Image Upload
+        if (mergedPayload.bannerImage) {
+            mergedPayload.bannerImage = await cloudinary.uploadImage(mergedPayload.bannerImage)
+        }
 
         mealPlan.merge(mergedPayload)
         await mealPlan.save()

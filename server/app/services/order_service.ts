@@ -152,6 +152,19 @@ export default class OrderService {
       const paymentService = new PaymentService()
       await paymentService.updateCookWallet(subscription.mealPlan.cookId, price)
 
+      // 5. Check if all orders are completed/missed to mark subscription as 'completed'
+      const remainingOrders = await Order.query()
+        .where('subscriptionId', subscription.id)
+        .where('status', 'scheduled')
+        .where('orderDate', '>', order.orderDate!.toSQLDate()!)
+        .useTransaction(trx)
+        .first()
+
+      if (!remainingOrders && (subscription.status === 'active' || subscription.status === 'paused')) {
+          subscription.status = 'completed'
+          await subscription.save()
+      }
+
       await trx.commit()
     } catch (error) {
       await trx.rollback()

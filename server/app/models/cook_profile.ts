@@ -18,6 +18,12 @@ import Review from '#models/review'
  */
 export default class CookProfile extends CookProfileSchema {
   @column()
+  declare kitchenImage: string | null
+
+  @column()
+  declare bannerImage: string | null
+
+  @column()
   declare wallet: string
   
   /**
