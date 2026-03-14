@@ -20,6 +20,7 @@ export default class AuthController {
     const user = await User.create({
       name: payload.name,
       email: payload.email,
+      phone: payload.phone,
       password: hashedPassword,
       role: payload.role || 'consumer', // default role
     })

@@ -4,6 +4,7 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 import User from '#models/user'
 import Subscription from '#models/subscription'
+import Order from '#models/order'
 
 export default class Payment extends PaymentSchema {
   @belongsTo(() => User)
@@ -11,4 +12,7 @@ export default class Payment extends PaymentSchema {
 
   @belongsTo(() => Subscription)
   declare subscription: BelongsTo<typeof Subscription>
+
+  @belongsTo(() => Order)
+  declare order: BelongsTo<typeof Order>
 }

@@ -7,6 +7,7 @@ export default class UserTransformer extends BaseTransformer<User> {
       id: this.resource.id,
       name: this.resource.name,
       email: this.resource.email,
+      phone: this.resource.phone,
       role: this.resource.role,
       createdAt: this.resource.createdAt,
       updatedAt: this.resource.updatedAt,

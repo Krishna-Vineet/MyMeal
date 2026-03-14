@@ -4,7 +4,7 @@ import { compose } from '@adonisjs/core/helpers'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { type AccessToken, DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 
-import { hasOne, hasMany } from '@adonisjs/lucid/orm'
+import { hasOne, hasMany, column } from '@adonisjs/lucid/orm'
 import type { HasOne, HasMany } from '@adonisjs/lucid/types/relations'
 import CookProfile from '#models/cook_profile'
 import Subscription from '#models/subscription'
@@ -24,6 +24,9 @@ import Review from '#models/review'
 export default class User extends compose(UserSchema, withAuthFinder(hash)) {
   static accessTokens = DbAccessTokensProvider.forModel(User)
   declare currentAccessToken?: AccessToken
+
+  @column()
+  declare phone: string | null
 
   /**
    * 🎓 Relationships in AdonisJS

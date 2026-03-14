@@ -1,5 +1,5 @@
 import { CookProfileSchema } from '#database/schema'
-import { belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import { belongsTo, hasMany, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 
 import User from '#models/user'
@@ -17,6 +17,8 @@ import Review from '#models/review'
  * from CookProfileSchema, meaning you get fully typed autocomplete (TypeScript magic)!
  */
 export default class CookProfile extends CookProfileSchema {
+  @column()
+  declare wallet: string
   
   /**
    * belongsTo establishes the inverse of hasOne.

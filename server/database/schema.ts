@@ -33,7 +33,7 @@ export class AuthAccessTokenSchema extends BaseModel {
 }
 
 export class CookProfileSchema extends BaseModel {
-  static $columns = ['address', 'bio', 'city', 'createdAt', 'id', 'image', 'kitchenName', 'latitude', 'longitude', 'phone', 'updatedAt', 'userId'] as const
+  static $columns = ['address', 'bio', 'city', 'createdAt', 'id', 'image', 'kitchenName', 'latitude', 'longitude', 'phone', 'updatedAt', 'userId', 'wallet'] as const
   $columns = CookProfileSchema.$columns
   @column()
   declare address: string | null
@@ -59,6 +59,8 @@ export class CookProfileSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare userId: string
+  @column()
+  declare wallet: string
 }
 
 export class MealComponentSchema extends BaseModel {
@@ -152,7 +154,7 @@ export class OrderSchema extends BaseModel {
 }
 
 export class PaymentSchema extends BaseModel {
-  static $columns = ['amount', 'createdAt', 'id', 'method', 'status', 'subscriptionId', 'updatedAt', 'userId'] as const
+  static $columns = ['amount', 'createdAt', 'id', 'method', 'orderId', 'status', 'subscriptionId', 'type', 'updatedAt', 'userId'] as const
   $columns = PaymentSchema.$columns
   @column()
   declare amount: number | null
@@ -163,9 +165,13 @@ export class PaymentSchema extends BaseModel {
   @column()
   declare method: string | null
   @column()
+  declare orderId: string | null
+  @column()
   declare status: string | null
   @column()
   declare subscriptionId: string
+  @column()
+  declare type: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
@@ -267,7 +273,7 @@ export class SubscriptionSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'id', 'isActive', 'name', 'password', 'role', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'id', 'isActive', 'name', 'password', 'phone', 'role', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -281,6 +287,8 @@ export class UserSchema extends BaseModel {
   declare name: string
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare phone: string | null
   @column()
   declare role: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })

@@ -3,6 +3,7 @@ import Subscription from '#models/subscription'
 import MealPlan from '#models/meal_plan'
 import MealComponent from '#models/meal_component'
 import OrderService from '#services/order_service'
+import PaymentService from '#services/payment_service'
 import db from '@adonisjs/lucid/services/db'
 import { createSubscriptionValidator } from '#validators/subscription'
 import { DateTime } from 'luxon'
@@ -71,12 +72,12 @@ export default class SubscriptionsController {
         }
 
         // 4. Calculate Daily Extra Price from Components
-        const componentIds = payload.components.map(c => c.mealComponentId)
+        const componentIds = payload.components.map((c: any) => c.mealComponentId)
         const mealComponents = await MealComponent.query().whereIn('id', componentIds)
 
         let dailyExtraPrice = 0
-        const subComponentsData = payload.components.map(item => {
-            const original = mealComponents.find(mc => mc.id === item.mealComponentId)
+        const subComponentsData = payload.components.map((item: any) => {
+            const original = mealComponents.find((mc: MealComponent) => mc.id === item.mealComponentId)
             if (!original) throw new Error(`Component ${item.mealComponentId} not found`)
 
             let itemExtraPrice = 0
@@ -139,6 +140,19 @@ export default class SubscriptionsController {
             // Trigger Order Generation
             const orderService = new OrderService()
             await orderService.generateOrders(subscription)
+
+            // Record Advance Payment if provided
+            const ap = payload.advancePayment
+            if (ap && ap > 0) {
+                const paymentService = new PaymentService()
+                await paymentService.processPayment({
+                    userId: user.id,
+                    subscriptionId: subscription.id,
+                    amount: ap,
+                    method: 'advance_payment',
+                    type: 'advance'
+                })
+            }
 
             return response.created({
                 message: 'Subscription confirmed!',
@@ -212,14 +226,14 @@ export default class SubscriptionsController {
             // 2. Update Components if provided
             if (payload.components) {
                 // For MVP, we replace components (snapshot prices again)
-                const componentIds = payload.components.map(c => c.mealComponentId)
+                const componentIds = payload.components.map((c: any) => c.mealComponentId)
                 const mealComponents = await MealComponent.query().whereIn('id', componentIds)
 
                 // Delete old SubscribedMealComponents
                 await db.from('subscribed_meal_components').where('subscription_id', subscription.id).delete().useTransaction(trx)
 
-                const subComponentsData = payload.components.map(item => {
-                    const original = mealComponents.find(mc => mc.id === item.mealComponentId)
+                const subComponentsData = payload.components.map((item: any) => {
+                    const original = mealComponents.find((mc: MealComponent) => mc.id === item.mealComponentId)
                     if (!original) throw new Error(`Component ${item.mealComponentId} not found`)
                     return {
                         subscriptionId: subscription.id,

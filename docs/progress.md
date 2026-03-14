@@ -1924,3 +1924,33 @@ Subscriptions now act as a financial ledger.
 
 
 
+---
+
+# Phase 7 Report: Payments & Notifications
+
+**Phase:** Phase 7 — Order Engine, Financials & Notifications
+**Status:** Completed
+**Goal:** Implement automated order fulfillment logic, financial tracking (wallet/ledger), and simulated WhatsApp notifications.
+
+## 1. Objectives Completed
+- ✅ **Database Migrations:** Added `type` and `order_id` to `payments`, `wallet` to `cook_profiles`, and `phone` to `users`.
+- ✅ **WhatsApp Service:** Created a simulation service for sending notifications via WhatsApp API.
+- ✅ **Notification Service:** Orchestrates credit/debit alerts for consumers and cooks.
+- ✅ **Payment System:** Full ledger support for advances, top-ups, settlements, and payouts.
+- ✅ **Cook Wallet:** Cooks now earn money in their digital wallet upon each meal pickup.
+- ✅ **Integration:** Connected orders, subscriptions, and payments into a unified financial flow.
+
+## 2. Technical Stack Used
+- **Backend:** AdonisJS V6
+- **Database:** PostgreSQL (Lucid ORM)
+- **Validation:** VineJS
+- **Messaging:** Simulated WhatsApp API Service
+
+## 3. Financial Logic Implemented
+- **Advance Payment:** 10% advance is recorded as a formal payment.
+- **Consumption:** `amountConsumed` updates automatically when order status transitions to `picked_up` or `missed`.
+- **Wallet Credit:** Funds are transferred to cook's wallet immediately upon fulfillment.
+- **Payouts:** Cooks can request simulated payouts, deducting from their balance.
+
+## 4. Next Phase
+- **Phase 8:** Media, Reviews, and Performance Optimization.

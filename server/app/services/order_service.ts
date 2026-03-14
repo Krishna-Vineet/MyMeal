@@ -2,6 +2,7 @@ import Subscription from '#models/subscription'
 import Order from '#models/order'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
+import PaymentService from '#services/payment_service'
 
 export default class OrderService {
   /**
@@ -146,6 +147,11 @@ export default class OrderService {
       subscription.amountConsumed = (Number(subscription.amountConsumed) + price).toString()
       
       await subscription.save()
+
+      // 4. Update Cook Wallet
+      const paymentService = new PaymentService()
+      await paymentService.updateCookWallet(subscription.mealPlan.cookId, price)
+
       await trx.commit()
     } catch (error) {
       await trx.rollback()

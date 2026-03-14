@@ -100,5 +100,17 @@ router
       })
       .prefix('orders')
       .use(middleware.auth())
+
+    const PaymentsController = () => import('#controllers/payments_controller')
+
+    router
+      .group(() => {
+        router.post('/', [PaymentsController, 'store']).use(middleware.role('consumer'))
+        router.get('/subscription/:id', [PaymentsController, 'index']).use(middleware.role('consumer'))
+        router.get('/wallet', [PaymentsController, 'walletStatus']).use(middleware.role('cook'))
+        router.post('/payout', [PaymentsController, 'payout']).use(middleware.role('cook'))
+      })
+      .prefix('payments')
+      .use(middleware.auth())
   })
   .prefix('/api/v1')
