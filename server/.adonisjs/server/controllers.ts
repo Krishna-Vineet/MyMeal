@@ -4,6 +4,14 @@
  */
 
 export const controllers = {
-  Profile: () => import('#controllers/profile_controller'),
   Auth: () => import('#controllers/auth_controller'),
+  CookProfiles: () => import('#controllers/cook_profiles_controller'),
+  Discovers: () => import('#controllers/discovers_controller'),
+  MealPlans: () => import('#controllers/meal_plans_controller'),
+  OrderNotes: () => import('#controllers/order_notes_controller'),
+  Orders: () => import('#controllers/orders_controller'),
+  Payments: () => import('#controllers/payments_controller'),
+  Profile: () => import('#controllers/profile_controller'),
+  Reviews: () => import('#controllers/reviews_controller'),
+  Subscriptions: () => import('#controllers/subscriptions_controller'),
 }

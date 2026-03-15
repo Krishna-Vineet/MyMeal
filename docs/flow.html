@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MyMeal Backend — Deep Dive</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--card2:#1a1a2e;--border:#2a2a3e;--accent:#6c5ce7;--accent2:#a29bfe;--green:#00b894;--orange:#fdcb6e;--red:#ff7675;--text:#e0e0e0;--text2:#a0a0b0;--radius:12px}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.6}
+a{color:var(--accent2);text-decoration:none}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* SIDEBAR */
+.sidebar{width:280px;background:var(--card);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;padding:24px 0}
+.sidebar h2{padding:0 20px 16px;font-size:18px;color:var(--accent2);border-bottom:1px solid var(--border);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sidebar .nav-group{padding:4px 12px}
+.sidebar .nav-group-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);padding:12px 8px 4px;font-weight:600}
+.sidebar a{display:block;padding:6px 12px;border-radius:6px;font-size:13px;color:var(--text2);transition:all .2s}
+.sidebar a:hover,.sidebar a.active{background:rgba(108,92,231,.15);color:var(--accent2)}
+
+/* MAIN */
+.main{margin-left:280px;flex:1;padding:32px 40px;max-width:1100px}
+.section{margin-bottom:48px;animation:fadeIn .5s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+h1{font-size:32px;margin-bottom:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+h2.section-title{font-size:22px;color:var(--accent2);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:8px}
+h3{font-size:17px;color:var(--green);margin:20px 0 8px}
+h4{font-size:14px;color:var(--orange);margin:12px 0 6px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:12px 0;transition:border-color .3s}
+.card:hover{border-color:var(--accent)}
+.card-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.card-header h3{margin:0;font-size:15px}
+.card-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.card.open .card-body{max-height:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.5px}
+.badge-get{background:rgba(0,184,148,.2);color:var(--green)}
+.badge-post{background:rgba(108,92,231,.2);color:var(--accent2)}
+.badge-patch{background:rgba(253,203,110,.2);color:var(--orange)}
+.badge-del{background:rgba(255,118,117,.2);color:var(--red)}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+th{background:var(--card2);color:var(--accent2);text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+tr:hover td{background:rgba(108,92,231,.05)}
+
+/* CODE */
+pre{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:8px 0;color:var(--text)}
+code{font-family:'Cascadia Code','Fira Code',monospace}
+.keyword{color:var(--accent2)}.str{color:var(--green)}.num{color:var(--orange)}.comment{color:var(--text2);font-style:italic}
+
+/* FLOW STEP */
+.flow{display:flex;flex-direction:column;gap:0;margin:10px 0}
+.step{display:flex;align-items:flex-start;gap:12px;position:relative;padding:8px 0 16px}
+.step::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--border)}
+.step:last-child::before{display:none}
+.step-num{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.step-content{flex:1;font-size:13px}
+.step-content strong{color:var(--accent2)}
+
+/* PIPE */
+.pipe{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:12px 0}
+.pipe-item{background:var(--card2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;font-size:12px;color:var(--text)}
+.pipe-arrow{color:var(--text2);font-size:14px}
+
+/* MERMAID */
+.mermaid{background:var(--card);border-radius:var(--radius);padding:20px;margin:12px 0;text-align:center}
+.mermaid svg{max-width:100%}
+
+/* RELATION CHIP */
+.rel{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;margin:0 2px}
+.rel-1{background:rgba(0,184,148,.15);color:var(--green)}
+.rel-n{background:rgba(253,203,110,.15);color:var(--orange)}
+.rel-fk{background:rgba(108,92,231,.15);color:var(--accent2)}
+.tag{font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);color:var(--text2);margin-left:4px}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2>🍱 MyMeal Backend</h2>
+  <div class="nav-group">
+    <div class="nav-group-title">Overview</div>
+    <a href="#story">📖 The Story</a>
+    <a href="#arch">🏗️ Architecture Flow</a>
+    <a href="#models">🗄️ Database Models</a>
+    <a href="#middleware">🔗 Middleware Pipeline</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Auth & Profile</div>
+    <a href="#api-register">POST /auth/register</a>
+    <a href="#api-login">POST /auth/login</a>
+    <a href="#api-logout">POST /auth/logout</a>
+    <a href="#api-profile">GET /account/profile</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Cook APIs</div>
+    <a href="#api-cook-create">POST /cook-profiles</a>
+    <a href="#api-cook-update">PATCH /cook-profiles</a>
+    <a href="#api-mp-list">GET /meal-plans</a>
+    <a href="#api-mp-create">POST /meal-plans</a>
+    <a href="#api-mp-update">PATCH /meal-plans/:id</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Consumer APIs</div>
+    <a href="#api-discover-list">GET /discover/cooks</a>
+    <a href="#api-discover-show">GET /discover/cooks/:id</a>
+    <a href="#api-sub-list">GET /subscriptions</a>
+    <a href="#api-sub-show">GET /subscriptions/:id</a>
+    <a href="#api-sub-create">POST /subscriptions</a>
+    <a href="#api-sub-update">PATCH /subscriptions/:id</a>
+    <a href="#api-sub-status">PATCH /subscriptions/:id/status</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Orders</div>
+    <a href="#api-order-cook">GET /orders/cook</a>
+    <a href="#api-order-consumer">GET /orders/consumer</a>
+    <a href="#api-order-status">PATCH /orders/:id/status</a>
+    <a href="#api-note-list">GET /orders/:id/notes</a>
+    <a href="#api-note-create">POST /orders/:id/notes</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Payments & Reviews</div>
+    <a href="#api-pay-create">POST /payments</a>
+    <a href="#api-pay-list">GET /payments/subscription/:id</a>
+    <a href="#api-wallet">GET /payments/wallet/status</a>
+    <a href="#api-payout">POST /payments/payout</a>
+    <a href="#api-review-create">POST /reviews</a>
+    <a href="#api-review-list">GET /reviews/cook/:id</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Services</div>
+    <a href="#svc-order">📦 OrderService</a>
+    <a href="#svc-payment">💳 PaymentService</a>
+    <a href="#svc-notification">🔔 NotificationService</a>
+    <a href="#svc-cloudinary">☁️ CloudinaryService</a>
+    <a href="#svc-whatsapp">📱 WhatsAppService</a>
+  </div>
+</nav>
+
+<main class="main">
+<h1>MyMeal Backend — Deep Dive</h1>
+<p style="color:var(--text2);margin-bottom:32px">Interactive documentation for the complete AdonisJS + PostgreSQL backend. Every model, middleware, API, service — explained.</p>
+
+<section class="section" id="story">
+<h2 class="section-title">📖 The MyMeal Story</h2>
+
+<div class="card open">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>What are we building?</h3></div>
+<div class="card-body" style="max-height:none">
+<p><strong>MyMeal</strong> is a bridge between the comfort of home-cooked food and the fast-paced life of modern consumers. We are building a hyper-local meal subscription engine that empowers home chefs ("Cooks") to run their own professional kitchens while providing "Consumers" with healthy, predictable, and customizable meal plans.</p>
+<p style="margin-top:12px">Unlike traditional food delivery, MyMeal focuses on <strong>long-term relationships</strong> via subscriptions, ensuring cooks have stable income and consumers have one less daily chore to worry about.</p>
+</div></div>
+
+<div class="card open">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>How are we building it?</h3></div>
+<div class="card-body" style="max-height:none">
+<p>The backend is engineered for <strong>reliability and transparency</strong> using the following principles:</p>
+<ul style="margin: 12px 20px; font-size: 13px; color: var(--text2)">
+  <li><strong>Robust Foundation:</strong> Powered by <strong>AdonisJS v6</strong> for its elegant TypeScript-first architecture and developer-friendly abstractions.</li>
+  <li><strong>Data Integrity:</strong> Every meal plan creation and subscription event is wrapped in <strong>SQL Transactions</strong> to prevent data corruption.</li>
+  <li><strong>Daily Order Engine:</strong> Instead of static schedules, we use a dynamic <code>OrderService</code> that generates individual orders for every valid subscription day, allowing for granular status tracking.</li>
+  <li><strong>Real-time Trust:</strong> Integrated with <strong>WhatsApp Web.js</strong> to send instant notifications for every payment, earning, and order note, keeping both parties in sync without checking the app constantly.</li>
+  <li><strong>Financial Ledger:</strong> A dual-entry style ledger tracks <code>amountPaid</code> vs <code>amountConsumed</code>, allowing for flexible payouts and advance payments.</li>
+</ul>
+</div></div>
+
+<div class="mermaid">
+graph TD
+  A[Concept] --> B[Home Chef Empowerment]
+  A --> C[Healthy Consumer Habits]
+  B --> D[Stable Income]
+  C --> E[Homestyle Nutrition]
+  D --> F[MyMeal Platform]
+  E --> F
+  F --> G[Real-time Notifications]
+  F --> H[Transparent Financials]
+</div>
+</section>
+
+<section class="section" id="arch">
+<h2 class="section-title">🏗️ Project Overview & Architecture</h2>
+
+<div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:32px">
+  <div class="card" style="margin:0"><h4 style="margin-top:0">🚀 Core Stack</h4><p style="font-size:13px">AdonisJS v6 (TS)<br>PostgreSQL + Lucid<br>Auth (Opaque Tokens)</p></div>
+  <div class="card" style="margin:0"><h4 style="margin-top:0">📁 Logic Layer</h4><p style="font-size:13px">Service Pattern<br>VineJS Validators<br>Transformers</p></div>
+  <div class="card" style="margin:0"><h4 style="margin-top:0">📱 Integrations</h4><p style="font-size:13px">Cloudinary (Images)<br>WhatsApp Web.js<br>Cron (Planned)</p></div>
+</div>
+
+<p>Every HTTP request follows this lifecycle through the AdonisJS framework:</p>
+<div class="mermaid">
+graph LR
+  A[Client Request] --> B[Server Middleware]
+  B --> B1[ForceJSON]
+  B1 --> B2[ContainerBindings]
+  B2 --> B3[CORS]
+  B3 --> C[Router Middleware]
+  C --> C1[BodyParser]
+  C1 --> C2[Session]
+  C2 --> C3[Shield CSRF]
+  C3 --> C4[InitAuth]
+  C4 --> C5[SilentAuth]
+  C5 --> D{Route Match?}
+  D -->|Yes| E[Named Middleware]
+  D -->|No| F[404 Response]
+  E --> E1[AuthMiddleware]
+  E1 --> E2[RoleMiddleware]
+  E2 --> G[Validator]
+  G --> H[Controller]
+  H --> I[Service Layer]
+  I --> J[Database/Lucid ORM]
+  J --> K[Response]
+  H --> K
+  I --> L[External Services]
+  L --> L1[Cloudinary]
+  L --> L2[WhatsApp]
+</div>
+
+<h3>Application Layers</h3>
+<div class="mermaid">
+graph TB
+  subgraph Frontend
+    FE[React Native / Web App]
+  end
+  subgraph API Layer
+    RT[Routes - start/routes.ts]
+    MW[Middleware - auth, role, etc.]
+    VL[Validators - VineJS schemas]
+    CT[Controllers - business logic entry]
+    TR[Transformers - response shaping]
+  end
+  subgraph Service Layer
+    OS[OrderService]
+    PS[PaymentService]
+    NS[NotificationService]
+    CS[CloudinaryService]
+  end
+  subgraph Data Layer
+    MD[Lucid ORM Models]
+    DB[(PostgreSQL)]
+  end
+  subgraph External
+    CL[Cloudinary CDN]
+    WA[WhatsApp Web.js]
+  end
+  FE --> RT --> MW --> VL --> CT
+  CT --> TR
+  CT --> OS --> MD --> DB
+  CT --> PS --> MD
+  CT --> NS --> WA
+  CT --> CS --> CL
+  PS --> NS
+  OS --> PS
+</div>
+
+<h3>Two User Roles</h3>
+<table>
+<tr><th>Role</th><th>Can Do</th><th>Key Routes</th></tr>
+<tr><td><span class="badge badge-post">COOK</span></td><td>Create/manage kitchen profile, create meal plans, view/manage orders, check wallet, request payouts</td><td>/cook-profiles, /meal-plans, /orders/cook, /payments/wallet, /payments/payout</td></tr>
+<tr><td><span class="badge badge-get">CONSUMER</span></td><td>Discover cooks, subscribe to meal plans, view orders, make payments, write reviews</td><td>/discover, /subscriptions, /orders/consumer, /payments, /reviews</td></tr>
+</table>
+</section>
+
+<section class="section" id="models">
+<h2 class="section-title">🗄️ Database Models</h2>
+<p>11 PostgreSQL tables managed via Lucid ORM. All primary keys are UUIDs (except auth_access_tokens which uses integer). Timestamps auto-managed.</p>
+
+<div class="mermaid">
+erDiagram
+  users ||--o| cook_profiles : "hasOne"
+  users ||--o{ subscriptions : "hasMany"
+  users ||--o{ payments : "hasMany"
+  users ||--o{ reviews : "hasMany"
+  cook_profiles ||--o{ meal_plans : "hasMany"
+  cook_profiles ||--o{ pickup_slots : "hasMany"
+  cook_profiles ||--o{ reviews : "hasMany"
+  meal_plans ||--o{ meal_components : "hasMany"
+  meal_plans ||--o{ subscriptions : "hasMany"
+  meal_plans ||--o{ pickup_slots : "hasMany"
+  subscriptions ||--o{ subscribed_meal_components : "hasMany"
+  subscriptions ||--o{ orders : "hasMany"
+  subscriptions ||--o{ payments : "hasMany"
+  subscriptions }o--|| pickup_slots : "belongsTo"
+  orders ||--o| order_notes : "hasOne"
+  meal_components ||--o{ subscribed_meal_components : "hasMany"
+</div>
+
+<!-- USER -->
+<div class="card open">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>👤 User</h3><span class="tag">users table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td>Auto-generated</td></tr>
+<tr><td>name</td><td>string</td><td>Required</td></tr>
+<tr><td>email</td><td>string</td><td>Unique, required</td></tr>
+<tr><td>phone</td><td>string | null</td><td>Unique, used for WhatsApp</td></tr>
+<tr><td>password</td><td>string</td><td>Hashed, serializeAs: null (hidden from API)</td></tr>
+<tr><td>role</td><td>string</td><td>'consumer' | 'cook'</td></tr>
+<tr><td>isActive</td><td>boolean | null</td><td>Account status</td></tr>
+<tr><td>createdAt</td><td>DateTime</td><td>Auto</td></tr>
+<tr><td>updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-1">hasOne</span> CookProfile &nbsp; <span class="rel rel-n">hasMany</span> Subscription, Payment, Review</p>
+</div></div>
+
+<!-- COOK PROFILE -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>👨‍🍳 CookProfile</h3><span class="tag">cook_profiles table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>userId</td><td>uuid (FK)</td><td>→ users.id</td></tr>
+<tr><td>kitchenName</td><td>string | null</td><td>Display name for kitchen</td></tr>
+<tr><td>bio</td><td>string | null</td><td>Kitchen description</td></tr>
+<tr><td>kitchenImage</td><td>string | null</td><td>Cloudinary URL</td></tr>
+<tr><td>bannerImage</td><td>string | null</td><td>Cloudinary URL</td></tr>
+<tr><td>phone</td><td>string | null</td><td>Kitchen phone</td></tr>
+<tr><td>address</td><td>string | null</td><td></td></tr>
+<tr><td>city</td><td>string | null</td><td></td></tr>
+<tr><td>latitude</td><td>string | null</td><td>For geo-search</td></tr>
+<tr><td>longitude</td><td>string | null</td><td>For geo-search</td></tr>
+<tr><td>wallet</td><td>string</td><td>Earning balance (numeric as string)</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> User &nbsp; <span class="rel rel-n">hasMany</span> MealPlan, PickupSlot, Review</p>
+</div></div>
+
+<!-- MEAL PLAN -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>🍽️ MealPlan</h3><span class="tag">meal_plans table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>cookId</td><td>uuid (FK)</td><td>→ cook_profiles.id</td></tr>
+<tr><td>title</td><td>string</td><td>Required, min 3 chars</td></tr>
+<tr><td>description</td><td>string | null</td><td></td></tr>
+<tr><td>basePrice</td><td>number</td><td>Daily base price in ₹</td></tr>
+<tr><td>subscriberLimit</td><td>number | null</td><td>Max active subscribers</td></tr>
+<tr><td>bannerImage</td><td>string | null</td><td>Cloudinary URL</td></tr>
+<tr><td>isActive</td><td>boolean | null</td><td>Shown to consumers when true</td></tr>
+<tr><td>validityType</td><td>string</td><td>'all_days' | 'weekdays' | 'weekends'</td></tr>
+<tr><td>availableDurations</td><td>json array</td><td>['one_time','1_week','2_week','1_month','3_month']</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> CookProfile &nbsp; <span class="rel rel-n">hasMany</span> MealComponent, Subscription, PickupSlot</p>
+</div></div>
+
+<!-- MEAL COMPONENT -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>🥗 MealComponent</h3><span class="tag">meal_components table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>mealPlanId</td><td>uuid (FK)</td><td>→ meal_plans.id</td></tr>
+<tr><td>name</td><td>string | null</td><td>e.g. "Extra Roti", "Salad"</td></tr>
+<tr><td>price</td><td>number | null</td><td>Per-unit extra price</td></tr>
+<tr><td>defaultQuantity</td><td>number | null</td><td>Included free quantity</td></tr>
+<tr><td>maxQuantity</td><td>number | null</td><td>Upper limit</td></tr>
+<tr><td>isToggle</td><td>boolean | null</td><td>If true, it's on/off (not quantity-based)</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> MealPlan &nbsp; <span class="rel rel-n">hasMany</span> SubscribedMealComponent</p>
+</div></div>
+
+<!-- PICKUP SLOT -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>📍 PickupSlot</h3><span class="tag">pickup_slots table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>mealPlanId</td><td>uuid (FK)</td><td>→ meal_plans.id</td></tr>
+<tr><td>locationName</td><td>string | null</td><td></td></tr>
+<tr><td>address</td><td>string | null</td><td></td></tr>
+<tr><td>latitude / longitude</td><td>string | null</td><td></td></tr>
+<tr><td>pickupTime</td><td>string | null</td><td>"HH:mm" format</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> MealPlan &nbsp; <span class="rel rel-n">hasMany</span> Subscription</p>
+</div></div>
+
+<!-- SUBSCRIPTION -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>📋 Subscription</h3><span class="tag">subscriptions table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>userId</td><td>uuid (FK)</td><td>→ users.id (consumer)</td></tr>
+<tr><td>mealPlanId</td><td>uuid (FK)</td><td>→ meal_plans.id</td></tr>
+<tr><td>pickupSlotId</td><td>uuid (FK)</td><td>→ pickup_slots.id</td></tr>
+<tr><td>startDate</td><td>Date</td><td></td></tr>
+<tr><td>endDate</td><td>Date</td><td>Auto-calculated from duration</td></tr>
+<tr><td>duration</td><td>string</td><td>'one_time'|'1_week'|'2_week'|'1_month'|'3_month'</td></tr>
+<tr><td>totalPrice</td><td>string (numeric)</td><td>dailyTotal × validDays</td></tr>
+<tr><td>amountPaid</td><td>string (numeric)</td><td>Running total of payments received</td></tr>
+<tr><td>amountConsumed</td><td>string (numeric)</td><td>Running total of fulfilled order prices</td></tr>
+<tr><td>status</td><td>string | null</td><td>'active'|'paused'|'cancelled'|'completed'</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> User, MealPlan, PickupSlot &nbsp; <span class="rel rel-n">hasMany</span> SubscribedMealComponent, Order, Payment</p>
+</div></div>
+
+<!-- SUBSCRIBED MEAL COMPONENT -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>🔗 SubscribedMealComponent</h3><span class="tag">subscribed_meal_components table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>subscriptionId</td><td>uuid (FK)</td><td>→ subscriptions.id</td></tr>
+<tr><td>mealComponentId</td><td>uuid (FK)</td><td>→ meal_components.id</td></tr>
+<tr><td>quantity</td><td>number | null</td><td>Consumer's chosen quantity</td></tr>
+<tr><td>enabled</td><td>boolean | null</td><td>For toggle components</td></tr>
+<tr><td>price</td><td>number | null</td><td>Snapshotted price at subscription time</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> Subscription, MealComponent</p>
+</div></div>
+
+<!-- ORDER -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>📦 Order</h3><span class="tag">orders table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>subscriptionId</td><td>uuid (FK)</td><td>→ subscriptions.id</td></tr>
+<tr><td>orderDate</td><td>Date</td><td>The day this order is for</td></tr>
+<tr><td>price</td><td>number | null</td><td>Daily price at generation time</td></tr>
+<tr><td>status</td><td>string | null</td><td>'scheduled'→'prepared'→'picked_up' or 'missed'</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> Subscription &nbsp; <span class="rel rel-1">hasOne</span> OrderNote</p>
+<h4>Status Lifecycle</h4>
+<div class="pipe">
+<span class="pipe-item">scheduled</span><span class="pipe-arrow">→</span>
+<span class="pipe-item">prepared</span><span class="pipe-arrow">→</span>
+<span class="pipe-item">picked_up ✅</span>
+</div>
+<div class="pipe">
+<span class="pipe-item">prepared</span><span class="pipe-arrow">→</span>
+<span class="pipe-item">missed ❌ (auto after 3hrs)</span>
+</div>
+</div></div>
+
+<!-- ORDER NOTE -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>📝 OrderNote</h3><span class="tag">order_notes table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>orderId</td><td>uuid (FK) | null</td><td>→ orders.id</td></tr>
+<tr><td>userId</td><td>uuid (FK) | null</td><td>→ users.id (who wrote it)</td></tr>
+<tr><td>note</td><td>string | null</td><td>The message content</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> Order, User</p>
+</div></div>
+
+<!-- PAYMENT -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>💳 Payment</h3><span class="tag">payments table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>userId</td><td>uuid (FK)</td><td>→ users.id</td></tr>
+<tr><td>subscriptionId</td><td>uuid (FK)</td><td>→ subscriptions.id</td></tr>
+<tr><td>orderId</td><td>uuid (FK) | null</td><td>→ orders.id (optional)</td></tr>
+<tr><td>amount</td><td>number | null</td><td>In ₹</td></tr>
+<tr><td>method</td><td>string | null</td><td>'advance_payment', 'transfer', etc.</td></tr>
+<tr><td>type</td><td>string</td><td>'advance' | 'topup' | 'settlement' | 'payout'</td></tr>
+<tr><td>status</td><td>string | null</td><td>'completed' etc.</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> User, Subscription, Order</p>
+</div></div>
+
+<!-- REVIEW -->
+<div class="card">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>⭐ Review</h3><span class="tag">reviews table</span></div>
+<div class="card-body">
+<table><tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+<tr><td>id</td><td>uuid (PK)</td><td></td></tr>
+<tr><td>userId</td><td>uuid (FK)</td><td>→ users.id (reviewer)</td></tr>
+<tr><td>cookId</td><td>uuid (FK)</td><td>→ cook_profiles.id</td></tr>
+<tr><td>rating</td><td>number | null</td><td>1-5</td></tr>
+<tr><td>comment</td><td>string | null</td><td>Max 1000 chars</td></tr>
+<tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto</td></tr>
+</table>
+<h4>Relations</h4>
+<p><span class="rel rel-fk">belongsTo</span> User, CookProfile</p>
+</div></div>
+
+</section>
+
+<section class="section" id="middleware">
+<h2 class="section-title">🔗 Middleware Pipeline</h2>
+<p>Middleware runs in 3 layers. Server middleware runs on <strong>every</strong> request. Router middleware runs on <strong>matched routes</strong>. Named middleware is <strong>explicitly attached</strong> to specific routes.</p>
+
+<h3>Layer 1: Server Middleware (Every Request)</h3>
+<div class="pipe">
+<span class="pipe-item" style="border-color:var(--accent)">ForceJsonResponse</span><span class="pipe-arrow">→</span>
+<span class="pipe-item" style="border-color:var(--accent)">ContainerBindings</span><span class="pipe-arrow">→</span>
+<span class="pipe-item" style="border-color:var(--accent)">CORS</span>
+</div>
+<div class="card open"><div class="card-body" style="max-height:none">
+<table><tr><th>Middleware</th><th>File</th><th>What It Does</th></tr>
+<tr><td><strong>ForceJsonResponse</strong></td><td>force_json_response_middleware.ts</td><td>Sets <code>Accept: application/json</code> header on every request so AdonisJS always returns JSON (not HTML error pages)</td></tr>
+<tr><td><strong>ContainerBindings</strong></td><td>container_bindings_middleware.ts</td><td>Binds <code>HttpContext</code> and <code>Logger</code> to the IoC container resolver for each request — enables dependency injection</td></tr>
+<tr><td><strong>CORS</strong></td><td>@adonisjs/cors</td><td>Handles Cross-Origin Resource Sharing headers so the frontend can call the API from a different domain</td></tr>
+</table>
+</div></div>
+
+<h3>Layer 2: Router Middleware (Matched Routes Only)</h3>
+<div class="pipe">
+<span class="pipe-item" style="border-color:var(--green)">BodyParser</span><span class="pipe-arrow">→</span>
+<span class="pipe-item" style="border-color:var(--green)">Session</span><span class="pipe-arrow">→</span>
+<span class="pipe-item" style="border-color:var(--green)">Shield (CSRF)</span><span class="pipe-arrow">→</span>
+<span class="pipe-item" style="border-color:var(--green)">InitializeAuth</span><span class="pipe-arrow">→</span>
+<span class="pipe-item" style="border-color:var(--green)">SilentAuth</span>
+</div>
+<div class="card open"><div class="card-body" style="max-height:none">
+<table><tr><th>Middleware</th><th>What It Does</th></tr>
+<tr><td><strong>BodyParser</strong></td><td>Parses JSON, form data, and multipart request bodies into <code>request.body()</code></td></tr>
+<tr><td><strong>Session</strong></td><td>Initializes session store (cookie-based)</td></tr>
+<tr><td><strong>Shield</strong></td><td>CSRF protection for form submissions</td></tr>
+<tr><td><strong>InitializeAuth</strong></td><td>Bootstraps the AdonisJS auth system, makes <code>ctx.auth</code> available</td></tr>
+<tr><td><strong>SilentAuth</strong></td><td>Silently checks if a valid token is present. Does NOT block the request if unauthenticated — just sets <code>ctx.auth.user</code> if token is valid</td></tr>
+</table>
+</div></div>
+
+<h3>Layer 3: Named Middleware (Route-Specific)</h3>
+<div class="pipe">
+<span class="pipe-item" style="border-color:var(--orange)">auth()</span><span class="pipe-arrow">→</span>
+<span class="pipe-item" style="border-color:var(--orange)">role('cook' | 'consumer')</span>
+</div>
+<div class="card open"><div class="card-body" style="max-height:none">
+<table><tr><th>Middleware</th><th>File</th><th>What It Does</th></tr>
+<tr><td><strong>AuthMiddleware</strong></td><td>auth_middleware.ts</td><td>Calls <code>ctx.auth.authenticateUsing()</code> — verifies the Bearer token in the Authorization header. Returns <strong>401 Unauthorized</strong> if token is missing/invalid/expired</td></tr>
+<tr><td><strong>RoleMiddleware</strong></td><td>role_middleware.ts</td><td>Checks <code>auth.user.role</code> against allowed roles. Supports string (<code>'cook'</code>), array, or object format. Returns <strong>403 Forbidden</strong> if role mismatch</td></tr>
+</table>
+</div></div>
+
+<h3>Exception Handler</h3>
+<div class="card open"><div class="card-body" style="max-height:none">
+<p><strong>File:</strong> <code>app/exceptions/handler.ts</code></p>
+<p>Extends AdonisJS <code>ExceptionHandler</code>. In development mode (<code>!app.inProduction</code>), shows verbose errors with stack traces. In production, returns clean error responses. Catches validation errors, auth errors, and unhandled exceptions.</p>
+</div></div>
+</section>
+
+<section class="section" id="auth-apis">
+<h2 class="section-title">🔐 Auth & Profile APIs</h2>
+
+<!-- REGISTER -->
+<div class="card" id="api-register">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/auth/register</h3><span class="tag">Public</span></div>
+<div class="card-body">
+<h4>Middleware Chain</h4>
+<div class="pipe"><span class="pipe-item">Server MW</span><span class="pipe-arrow">→</span><span class="pipe-item">Router MW</span><span class="pipe-arrow">→</span><span class="pipe-item">No named MW (public)</span></div>
+
+<h4>Validator: signupValidator</h4>
+<table><tr><th>Field</th><th>Rules</th></tr>
+<tr><td>name</td><td>string, required</td></tr>
+<tr><td>email</td><td>string, email, max 254, <strong>unique in users table</strong></td></tr>
+<tr><td>phone</td><td>string, <strong>unique in users table</strong></td></tr>
+<tr><td>password</td><td>string, min 8, max 32</td></tr>
+<tr><td>passwordConfirmation</td><td>string, must match password</td></tr>
+<tr><td>role</td><td>enum: 'consumer' | 'cook'</td></tr>
+</table>
+
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Validate</strong> — request body is validated against signupValidator. If email/phone already exists in DB, VineJS throws 422.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Hash Password</strong> — <code>hash.make(payload.password)</code> uses scrypt/argon2 to hash the password.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Create User</strong> — <code>User.create()</code> inserts into users table with hashed password and default role.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Generate Token</strong> — <code>User.accessTokens.create(user)</code> creates an opaque access token in auth_access_tokens table.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-content"><strong>Transform & Respond</strong> — <code>UserTransformer</code> strips password, returns user + token. Status 201.</div></div>
+</div>
+
+<h4>Example Request</h4>
+<pre><code>{
+  "name": "Ravi Kumar",
+  "email": "ravi@example.com",
+  "phone": "9876543210",
+  "password": "secret1234",
+  "passwordConfirmation": "secret1234",
+  "role": "consumer"
+}</code></pre>
+
+<h4>Example Response (201)</h4>
+<pre><code>{
+  "message": "Registration successful",
+  "user": {
+    "id": "a1b2c3d4-...",
+    "name": "Ravi Kumar",
+    "email": "ravi@example.com",
+    "phone": "9876543210",
+    "role": "consumer",
+    "createdAt": "2026-03-15T...",
+    "updatedAt": "2026-03-15T..."
+  },
+  "token": "oat_NjM2Nj..."
+}</code></pre>
+</div></div>
+
+<!-- LOGIN -->
+<div class="card" id="api-login">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/auth/login</h3><span class="tag">Public</span></div>
+<div class="card-body">
+<h4>Validator: loginValidator</h4>
+<table><tr><th>Field</th><th>Rules</th></tr>
+<tr><td>email</td><td>string, email, max 254</td></tr>
+<tr><td>password</td><td>string</td></tr>
+</table>
+
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Validate</strong> — loginValidator checks email format and password presence.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Verify Credentials</strong> — <code>User.verifyCredentials(email, password)</code> finds user by email, then compares hash. Throws E_INVALID_CREDENTIALS on failure.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Generate Token</strong> — New access token created for this login session.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Transform & Respond</strong> — Returns user (via UserTransformer) + token. Status 200.</div></div>
+</div>
+
+<h4>Example Request</h4>
+<pre><code>{ "email": "ravi@example.com", "password": "secret1234" }</code></pre>
+<h4>Example Response (200)</h4>
+<pre><code>{
+  "message": "Login successful",
+  "user": { "id": "a1b2c3d4-...", "name": "Ravi Kumar", "email": "ravi@example.com", "role": "consumer" },
+  "token": "oat_NjM2Nj..."
+}</code></pre>
+</div></div>
+
+<!-- LOGOUT -->
+<div class="card" id="api-logout">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/auth/logout</h3><span class="tag">🔒 auth</span></div>
+<div class="card-body">
+<h4>Middleware Chain</h4>
+<div class="pipe"><span class="pipe-item">auth()</span></div>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Get User</strong> — <code>auth.user!</code> is guaranteed by auth middleware.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Revoke Token</strong> — <code>User.accessTokens.delete(user, token.identifier)</code> deletes the row from auth_access_tokens table.</div></div>
+</div>
+<h4>Example Response (200)</h4>
+<pre><code>{ "message": "Logged out successfully" }</code></pre>
+</div></div>
+
+<!-- PROFILE -->
+<div class="card" id="api-profile">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/account/profile</h3><span class="tag">🔒 auth</span></div>
+<div class="card-body">
+<h4>Middleware Chain</h4>
+<div class="pipe"><span class="pipe-item">auth()</span></div>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Get User</strong> — <code>auth.getUserOrFail()</code></div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Conditional Preload</strong> — If user.role === 'cook', preloads the cookProfile relation (kitchen details).</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Transform & Respond</strong> — <code>UserTransformer</code> shapes response, includes cookProfile if loaded.</div></div>
+</div>
+<h4>Example Response (200) — Cook User</h4>
+<pre><code>{
+  "id": "c1d2...", "name": "Priya Chef", "email": "priya@kitchen.com", "role": "cook",
+  "cookProfile": { "id": "cp1...", "kitchenName": "Priya's Kitchen", "bio": "Homestyle meals", "wallet": "1500.00" }
+}</code></pre>
+</div></div>
+</section>
+
+<section class="section" id="cook-apis">
+<h2 class="section-title">👨‍🍳 Cook APIs</h2>
+
+<!-- COOK PROFILE CREATE -->
+<div class="card" id="api-cook-create">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/cook-profiles</h3><span class="tag">🔒 auth + role(cook)</span></div>
+<div class="card-body">
+<h4>Middleware</h4>
+<div class="pipe"><span class="pipe-item">auth()</span><span class="pipe-arrow">→</span><span class="pipe-item">role('cook')</span></div>
+<h4>Validator: createCookProfileValidator</h4>
+<table><tr><th>Field</th><th>Rules</th></tr>
+<tr><td>kitchenName</td><td>string, trim, min 3, required</td></tr>
+<tr><td>bio</td><td>string, trim, optional</td></tr>
+<tr><td>kitchenImage</td><td>string (base64/URL), optional</td></tr>
+<tr><td>bannerImage</td><td>string (base64/URL), optional</td></tr>
+<tr><td>location</td><td>string, optional</td></tr>
+<tr><td>latitude / longitude</td><td>string, optional</td></tr>
+</table>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Auth Check</strong> — auth middleware verifies token, role middleware ensures user.role === 'cook'</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Duplicate Check</strong> — <code>CookProfile.findBy('userId', user.id)</code> — returns 400 if profile already exists</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Validate</strong> — createCookProfileValidator validates body</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Image Upload</strong> — If kitchenImage or bannerImage provided, <code>CloudinaryService.uploadImage()</code> uploads and returns URL</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-content"><strong>Create</strong> — <code>user.related('cookProfile').create(payload)</code> inserts into cook_profiles with userId FK</div></div>
+</div>
+<h4>Example Request</h4>
+<pre><code>{ "kitchenName": "Priya's Kitchen", "bio": "Homestyle North Indian meals", "location": "Sector 42, Gurugram" }</code></pre>
+<h4>Example Response (201)</h4>
+<pre><code>{ "message": "Cook profile created successfully", "profile": { "id": "cp-1...", "kitchenName": "Priya's Kitchen", "userId": "u-1..." } }</code></pre>
+</div></div>
+
+<!-- COOK PROFILE UPDATE -->
+<div class="card" id="api-cook-update">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-patch">PATCH</span> /api/v1/cook-profiles</h3><span class="tag">🔒 auth + role(cook)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Find Profile</strong> — <code>CookProfile.findBy('userId', user.id)</code> — 404 if not found</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Validate</strong> — updateCookProfileValidator (all fields optional)</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Image Upload</strong> — CloudinaryService if new images provided</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Merge & Save</strong> — <code>profile.merge(payload)</code> updates only provided fields</div></div>
+</div>
+</div></div>
+
+<!-- MEAL PLAN LIST -->
+<div class="card" id="api-mp-list">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/meal-plans</h3><span class="tag">🔒 auth + role(cook)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Find Cook Profile</strong> — Gets cookProfile by userId, 404 if missing</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Query</strong> — <code>MealPlan.query().where('cookId', cookProfile.id).preload('mealComponents').preload('pickupSlots')</code></div></div>
+</div>
+<h4>Example Response (200)</h4>
+<pre><code>[{
+  "id": "mp-1...", "title": "Daily Tiffin", "basePrice": 120, "validityType": "weekdays",
+  "mealComponents": [{ "id": "mc-1", "name": "Roti", "price": 10, "defaultQuantity": 4 }],
+  "pickupSlots": [{ "id": "ps-1", "locationName": "Gate 2", "pickupTime": "12:30" }]
+}]</code></pre>
+</div></div>
+
+<!-- MEAL PLAN CREATE -->
+<div class="card" id="api-mp-create">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/meal-plans</h3><span class="tag">🔒 auth + role(cook)</span></div>
+<div class="card-body">
+<h4>Validator: createMealPlanValidator</h4>
+<table><tr><th>Field</th><th>Rules</th></tr>
+<tr><td>title</td><td>string, min 3, required</td></tr>
+<tr><td>description</td><td>string, optional</td></tr>
+<tr><td>basePrice</td><td>number, min 0, required</td></tr>
+<tr><td>subscriberLimit</td><td>number, min 1, optional</td></tr>
+<tr><td>bannerImage</td><td>string, optional</td></tr>
+<tr><td>isActive</td><td>boolean, optional (default true)</td></tr>
+<tr><td>validityType</td><td>enum: weekdays|weekends|all_days, optional</td></tr>
+<tr><td>availableDurations</td><td>array of enum, optional</td></tr>
+<tr><td>components[]</td><td>array min 1: { name, price?, defaultQuantity?, maxQuantity?, isToggle? }</td></tr>
+<tr><td>pickupSlots[]</td><td>array min 1: { locationName, address?, lat?, lng?, pickupTime }</td></tr>
+</table>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Auth + Cook Profile</strong> — 403 if no cook profile exists</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Validate</strong> — createMealPlanValidator validates entire nested structure</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Begin Transaction</strong> — <code>db.transaction()</code> ensures atomicity</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Create MealPlan</strong> — Sets all fields, uploads banner image via Cloudinary if provided</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-content"><strong>Create Components</strong> — <code>mealPlan.related('mealComponents').createMany()</code></div></div>
+<div class="step"><div class="step-num">6</div><div class="step-content"><strong>Create Pickup Slots</strong> — <code>mealPlan.related('pickupSlots').createMany()</code></div></div>
+<div class="step"><div class="step-num">7</div><div class="step-content"><strong>Commit</strong> — On success, loads relations and returns. On error, rolls back everything.</div></div>
+</div>
+<h4>Example Request</h4>
+<pre><code>{
+  "title": "Daily Tiffin",
+  "basePrice": 120,
+  "validityType": "weekdays",
+  "availableDurations": ["1_week", "1_month"],
+  "components": [
+    { "name": "Roti", "price": 10, "defaultQuantity": 4, "maxQuantity": 8 },
+    { "name": "Salad", "price": 20, "isToggle": true }
+  ],
+  "pickupSlots": [
+    { "locationName": "Main Gate", "pickupTime": "12:30" }
+  ]
+}</code></pre>
+</div></div>
+
+<!-- MEAL PLAN UPDATE -->
+<div class="card" id="api-mp-update">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-patch">PATCH</span> /api/v1/meal-plans/:id</h3><span class="tag">🔒 auth + role(cook)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Ownership Check</strong> — Finds meal plan WHERE id = params.id AND cookId = cookProfile.id</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Validate</strong> — updateMealPlanValidator (all fields optional)</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Merge Top-Level Only</strong> — Components and pickupSlots are removed from merge payload (nested update is complex for MVP)</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Image Upload</strong> — CloudinaryService if new bannerImage provided</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-content"><strong>Save</strong> — <code>mealPlan.merge(payload).save()</code></div></div>
+</div>
+</div></div>
+</section>
+
+<section class="section" id="consumer-apis">
+<h2 class="section-title">🔍 Consumer APIs — Discovery & Subscriptions</h2>
+
+<!-- DISCOVER LIST -->
+<div class="card" id="api-discover-list">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/discover/cooks</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Query Parameters</h4>
+<table><tr><th>Param</th><th>Type</th><th>Notes</th></tr>
+<tr><td>q</td><td>string?</td><td>Search by cook name or kitchen name (ILIKE)</td></tr>
+<tr><td>lat</td><td>number?</td><td>Center latitude for geo-filter</td></tr>
+<tr><td>lng</td><td>number?</td><td>Center longitude for geo-filter</td></tr>
+<tr><td>radius</td><td>number?</td><td>Radius in km (default 10)</td></tr>
+</table>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Build Query</strong> — <code>CookProfile.query().preload('user')</code></div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Search Filter</strong> — If <code>q</code> provided, filter by user.name ILIKE or kitchenName ILIKE</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Geo Filter</strong> — If lat/lng provided, compute bounding box (1°≈111km), filter lat/lng with <code>whereBetween</code></div></div>
+</div>
+<h4>Example: <code>GET /api/v1/discover/cooks?q=priya&lat=28.4&lng=77.0&radius=5</code></h4>
+<pre><code>[{
+  "id": "cp-1...", "kitchenName": "Priya's Kitchen", "bio": "...", "latitude": "28.41", "longitude": "77.01",
+  "user": { "id": "u-1", "name": "Priya Chef" }
+}]</code></pre>
+</div></div>
+
+<!-- DISCOVER SHOW -->
+<div class="card" id="api-discover-show">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/discover/cooks/:id</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Query</strong> — Find CookProfile by id, preload active meal plans with components and pickup slots</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Filter</strong> — Only preloads mealPlans where <code>isActive = true</code></div></div>
+</div>
+</div></div>
+
+<!-- SUBSCRIPTION LIST -->
+<div class="card" id="api-sub-list">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/subscriptions</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<p>Lists all subscriptions for the logged-in consumer, preloading mealPlan (with cook) and pickupSlot. Ordered by createdAt desc.</p>
+</div></div>
+
+<!-- SUBSCRIPTION SHOW -->
+<div class="card" id="api-sub-show">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/subscriptions/:id</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Query</strong> — Finds subscription by id WHERE userId = auth.user.id. Preloads mealPlan→cook, pickupSlot, subscribedMealComponents→mealComponent</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Calculate Financials</strong> — <code>due = amountConsumed - amountPaid</code> (positive = user owes, negative = credit)</div></div>
+</div>
+<h4>Example Response (200)</h4>
+<pre><code>{
+  "subscription": { "id": "sub-1...", "status": "active", "totalPrice": "3360", "amountPaid": "336", "amountConsumed": "960" },
+  "financials": { "totalPrice": 3360, "amountPaid": 336, "amountConsumed": 960, "due": 624 }
+}</code></pre>
+</div></div>
+
+<!-- SUBSCRIPTION CREATE -->
+<div class="card" id="api-sub-create">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/subscriptions</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Validator: createSubscriptionValidator</h4>
+<table><tr><th>Field</th><th>Rules</th></tr>
+<tr><td>mealPlanId</td><td>string, required</td></tr>
+<tr><td>pickupSlotId</td><td>string, required</td></tr>
+<tr><td>startDate</td><td>string (ISO date), required</td></tr>
+<tr><td>duration</td><td>enum: one_time|1_week|2_week|1_month|3_month, optional</td></tr>
+<tr><td>advancePayment</td><td>number, min 0, optional</td></tr>
+<tr><td>components[]</td><td>array min 1: { mealComponentId, quantity, enabled? }</td></tr>
+</table>
+<h4>Controller Flow (Most Complex API)</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Validate</strong> — createSubscriptionValidator</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Check Meal Plan</strong> — Must exist AND be active. Returns 404 otherwise.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Check Capacity</strong> — Counts active/paused subs for this plan. If ≥ subscriberLimit → 400.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Validate Pickup Slot</strong> — Must belong to this meal plan.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-content"><strong>Calculate Date Range</strong> — <code>calculateSubscriptionRange(startDate, duration, validityType)</code> → endDate + validDays count (skips weekends/weekdays per validityType)</div></div>
+<div class="step"><div class="step-num">6</div><div class="step-content"><strong>Price Components</strong> — For each component: if toggle → add price when enabled; if quantity → add (qty - defaultQty) × price for extras. Sum = dailyExtraPrice.</div></div>
+<div class="step"><div class="step-num">7</div><div class="step-content"><strong>Total = (basePrice + dailyExtraPrice) × validDays</strong></div></div>
+<div class="step"><div class="step-num">8</div><div class="step-content"><strong>Advance Check</strong> — advancePayment must be ≥ 10% of totalPrice. Returns 400 with minAdvance if too low.</div></div>
+<div class="step"><div class="step-num">9</div><div class="step-content"><strong>Transaction</strong> — Creates Subscription + SubscribedMealComponents atomically</div></div>
+<div class="step"><div class="step-num">10</div><div class="step-content"><strong>OrderService.generateOrders()</strong> — Auto-generates one Order per valid day (status: 'scheduled')</div></div>
+<div class="step"><div class="step-num">11</div><div class="step-content"><strong>PaymentService.processPayment()</strong> — Records advance payment, updates amountPaid on subscription</div></div>
+</div>
+<h4>Example Request</h4>
+<pre><code>{
+  "mealPlanId": "mp-1...",
+  "pickupSlotId": "ps-1...",
+  "startDate": "2026-03-16",
+  "duration": "1_month",
+  "advancePayment": 400,
+  "components": [
+    { "mealComponentId": "mc-1...", "quantity": 6, "enabled": true },
+    { "mealComponentId": "mc-2...", "quantity": 1, "enabled": true }
+  ]
+}</code></pre>
+<h4>Example Response (201)</h4>
+<pre><code>{
+  "message": "Subscription confirmed!",
+  "totalPrice": 3360,
+  "validDays": 22,
+  "dailyTotal": 152.73,
+  "subscription": { "id": "sub-1...", "status": "active", "amountPaid": "400", "amountConsumed": "0" }
+}</code></pre>
+</div></div>
+
+<!-- SUBSCRIPTION UPDATE -->
+<div class="card" id="api-sub-update">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-patch">PATCH</span> /api/v1/subscriptions/:id</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Find & Own</strong> — Subscription by id + userId match</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Update Slot</strong> — If new pickupSlotId provided, updates it</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Replace Components</strong> — Deletes old subscribed_meal_components, inserts new ones with snapshotted prices (within transaction)</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>OrderService.handleSubscriptionEdit()</strong> — Deletes future scheduled orders, re-generates with new daily price</div></div>
+</div>
+</div></div>
+
+<!-- SUBSCRIPTION STATUS -->
+<div class="card" id="api-sub-status">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-patch">PATCH</span> /api/v1/subscriptions/:id/status</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Body</h4>
+<pre><code>{ "status": "paused" | "active" | "cancelled" }</code></pre>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Financial Guard</strong> — Cannot cancel if <code>amountConsumed > amountPaid</code> (outstanding dues). Returns 400.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Update Status</strong> — Updates subscription.status</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Order Lifecycle:</strong><br>
+• <strong>paused</strong> → <code>OrderService.handleSubscriptionPause()</code> deletes future 'scheduled' orders<br>
+• <strong>active</strong> (resume) → <code>OrderService.handleSubscriptionResume()</code> re-generates orders from today to endDate</div></div>
+</div>
+</div></div>
+</section>
+
+<section class="section" id="order-apis">
+<h2 class="section-title">📦 Order & Note APIs</h2>
+
+<!-- ORDERS FOR COOK -->
+<div class="card" id="api-order-cook">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/orders/cook</h3><span class="tag">🔒 auth + role(cook)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Get Cook Profile</strong> — from auth.user → related cookProfile</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>7-Day Window Query</strong> — Orders from today to +7 days WHERE subscription→mealPlan→cookId matches</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Preload</strong> — subscription (user, mealPlan, pickupSlot, enabled subscribedMealComponents→mealComponent) + note</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Group by Date</strong> — Returns <code>{ "2026-03-16": [...orders], "2026-03-17": [...] }</code></div></div>
+</div>
+<h4>Example Response (200)</h4>
+<pre><code>{
+  "2026-03-16": [{
+    "id": "ord-1", "orderDate": "2026-03-16", "status": "scheduled", "price": 152,
+    "subscription": {
+      "user": { "name": "Ravi Kumar" },
+      "pickupSlot": { "locationName": "Gate 2", "pickupTime": "12:30" },
+      "subscribedMealComponents": [{ "mealComponent": { "name": "Roti" }, "quantity": 6 }]
+    }
+  }]
+}</code></pre>
+</div></div>
+
+<!-- ORDERS FOR CONSUMER -->
+<div class="card" id="api-order-consumer">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/orders/consumer</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<p>Finds all orders where subscription.userId = auth.user.id. Preloads mealPlan→cook, pickupSlot, note. Ordered by orderDate desc (history view).</p>
+</div></div>
+
+<!-- ORDER STATUS UPDATE -->
+<div class="card" id="api-order-status">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-patch">PATCH</span> /api/v1/orders/:id/status</h3><span class="tag">🔒 auth + role(cook)</span></div>
+<div class="card-body">
+<h4>Body</h4>
+<pre><code>{ "status": "prepared" | "picked_up" }</code></pre>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Validate Status</strong> — Only 'prepared' and 'picked_up' are accepted. 400 otherwise.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Find Order</strong> — Preloads subscription→mealPlan</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Authorization</strong> — Checks that auth.user's cookProfile.id matches order.subscription.mealPlan.cookId. 403 if not.</div></div>
+<div class="step"><div class="step-num">4a</div><div class="step-content"><strong>If 'prepared'</strong> — Simply updates order.status to 'prepared' and saves.</div></div>
+<div class="step"><div class="step-num">4b</div><div class="step-content"><strong>If 'picked_up'</strong> — Calls <code>OrderService.syncFinancials(order, 'picked_up')</code> which:<br>
+• Sets order status to 'picked_up'<br>
+• Adds order.price to subscription.amountConsumed<br>
+• Adds order.price to cook's wallet via PaymentService.updateCookWallet()<br>
+• Checks if subscription is complete (no remaining scheduled orders) → marks 'completed'<br>
+• All in a transaction</div></div>
+</div>
+</div></div>
+
+<!-- ORDER NOTES CREATE -->
+<div class="card" id="api-note-create">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/orders/:id/notes</h3><span class="tag">🔒 auth</span></div>
+<div class="card-body">
+<h4>Body</h4>
+<pre><code>{ "note": "Please add extra spice today" }</code></pre>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Validate</strong> — note content must not be empty</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Find Order</strong> — Preloads subscription→mealPlan</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Authorization</strong> — User must be either the consumer (subscription.userId) OR the cook (mealPlan.cookId matches user's cookProfile). 403 otherwise.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Create Note</strong> — <code>OrderNote.create({ orderId, userId, note })</code></div></div>
+<div class="step"><div class="step-num">5</div><div class="step-content"><strong>Notify</strong> — <code>NotificationService.notifyNewOrderNote(note)</code> sends WhatsApp to the other party (if consumer writes → notify cook, and vice versa). Async/fire-and-forget.</div></div>
+</div>
+</div></div>
+
+<!-- ORDER NOTES LIST -->
+<div class="card" id="api-note-list">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/orders/:id/notes</h3><span class="tag">🔒 auth</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<p>Same authorization as note creation — must be consumer or cook for this order. Returns all notes for the order, preloading user info, ordered by createdAt asc (chronological chat).</p>
+</div></div>
+</section>
+
+<section class="section" id="payment-review-apis">
+<h2 class="section-title">💳 Payment & ⭐ Review APIs</h2>
+
+<!-- PAYMENT CREATE -->
+<div class="card" id="api-pay-create">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/payments</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<h4>Validator (Inline VineJS)</h4>
+<table><tr><th>Field</th><th>Rules</th></tr>
+<tr><td>subscriptionId</td><td>string, uuid, required</td></tr>
+<tr><td>amount</td><td>number, positive, required</td></tr>
+<tr><td>method</td><td>string, required</td></tr>
+<tr><td>type</td><td>enum: 'advance' | 'topup' | 'settlement'</td></tr>
+</table>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Validate</strong> — Inline VineJS schema</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>PaymentService.processPayment()</strong> →<br>
+• Creates Payment record (transaction)<br>
+• Updates subscription.amountPaid += amount<br>
+• Sends WhatsApp notification via NotificationService</div></div>
+</div>
+<h4>Example Request</h4>
+<pre><code>{ "subscriptionId": "sub-1...", "amount": 500, "method": "upi", "type": "topup" }</code></pre>
+<h4>Example Response (201)</h4>
+<pre><code>{ "id": "pay-1...", "amount": 500, "method": "upi", "type": "topup", "status": null, "subscriptionId": "sub-1...", "userId": "u-1..." }</code></pre>
+</div></div>
+
+<!-- PAYMENT LIST -->
+<div class="card" id="api-pay-list">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/payments/subscription/:id</h3><span class="tag">🔒 auth + role(consumer)</span></div>
+<div class="card-body">
+<p>Lists all payments for a specific subscription, scoped to the auth user. Ordered by createdAt desc.</p>
+</div></div>
+
+<!-- WALLET STATUS -->
+<div class="card" id="api-wallet">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/payments/wallet/status</h3><span class="tag">🔒 auth</span></div>
+<div class="card-body">
+<h4>Controller Flow</h4>
+<p>Returns the cook's wallet balance. Gets cookProfile from auth.user. Returns 401 if user is not a cook.</p>
+<h4>Example Response (200)</h4>
+<pre><code>{ "walletBalance": "1500.00", "kitchenName": "Priya's Kitchen" }</code></pre>
+</div></div>
+
+<!-- PAYOUT -->
+<div class="card" id="api-payout">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/payments/payout</h3><span class="tag">🔒 auth</span></div>
+<div class="card-body">
+<h4>Body</h4>
+<pre><code>{ "amount": 1000 }</code></pre>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Cook Check</strong> — Must have a cook profile. 401 if not.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Amount Check</strong> — Must be a positive number. 400 if not.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>PaymentService.processPayout()</strong> →<br>
+• Checks wallet ≥ amount (throws "Insufficient wallet balance")<br>
+• Deducts from wallet (transaction)<br>
+• Creates Payment record with type='payout', method='transfer', status='completed'<br>
+• Sends WhatsApp notification</div></div>
+</div>
+</div></div>
+
+<!-- REVIEW CREATE -->
+<div class="card" id="api-review-create">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-post">POST</span> /api/v1/reviews</h3><span class="tag">🔒 auth</span></div>
+<div class="card-body">
+<h4>Validator: createReviewValidator</h4>
+<table><tr><th>Field</th><th>Rules</th></tr>
+<tr><td>cookId</td><td>string, required</td></tr>
+<tr><td>rating</td><td>number, 1-5, required</td></tr>
+<tr><td>comment</td><td>string, max 1000, optional</td></tr>
+</table>
+<h4>Controller Flow</h4>
+<div class="flow">
+<div class="step"><div class="step-num">1</div><div class="step-content"><strong>Find Cook</strong> — CookProfile.find(cookId). 404 if not found.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-content"><strong>Self-Review Guard</strong> — Cannot review your own kitchen (cook.userId !== user.id). 403.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-content"><strong>Duplicate Guard</strong> — One review per user per cook. Checks existing review. 400 if duplicate.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-content"><strong>Create</strong> — <code>Review.create({ userId, cookId, rating, comment })</code></div></div>
+</div>
+<h4>Example Request</h4>
+<pre><code>{ "cookId": "cp-1...", "rating": 5, "comment": "Amazing home-cooked meals!" }</code></pre>
+</div></div>
+
+<!-- REVIEW LIST -->
+<div class="card" id="api-review-list">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+<h3><span class="badge badge-get">GET</span> /api/v1/reviews/cook/:id</h3><span class="tag">🔒 auth</span></div>
+<div class="card-body">
+<p>Lists all reviews for a specific cook, preloading user (id, name). Ordered by createdAt desc.</p>
+</div></div>
+</section>
+
+<section class="section" id="services-deepdive">
+<h2 class="section-title">⚙️ Services Deep Dive</h2>
+<p>Services encapsulate business logic, keeping controllers thin. They handle transactions, financial calculations, external integrations, and notifications.</p>
+
+<!-- ORDER SERVICE -->
+<div class="card open" id="svc-order">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>📦 OrderService</h3><span class="tag">app/services/order_service.ts</span></div>
+<div class="card-body" style="max-height:none">
+<p>The brain of order lifecycle management. Handles order generation, pause/resume, edit, financial sync, and auto-miss logic.</p>
+<table><tr><th>Method</th><th>Called By</th><th>What It Does</th></tr>
+<tr><td><strong>generateOrders(sub)</strong></td><td>SubscriptionsController.store</td><td>Loops from startDate → endDate, creates one Order per valid day (respects validityType: weekdays/weekends/all_days). Each order gets status='scheduled', price=dailyPrice.</td></tr>
+<tr><td><strong>handleSubscriptionPause(sub)</strong></td><td>SubscriptionsController.updateStatus</td><td>Deletes all future orders with status='scheduled' and orderDate ≥ today.</td></tr>
+<tr><td><strong>handleSubscriptionResume(sub)</strong></td><td>SubscriptionsController.updateStatus</td><td>Re-generates orders from today → endDate, checks for existing orders to avoid duplicates.</td></tr>
+<tr><td><strong>handleSubscriptionEdit(sub)</strong></td><td>SubscriptionsController.update</td><td>Deletes future scheduled orders, then calls handleSubscriptionResume to re-generate with updated pricing.</td></tr>
+<tr><td><strong>syncFinancials(order, status)</strong></td><td>OrdersController.updateStatus</td><td><strong>Transaction:</strong> Sets order status → adds order.price to subscription.amountConsumed → calls PaymentService.updateCookWallet → checks if subscription is done (no more scheduled orders) → marks 'completed'</td></tr>
+<tr><td><strong>handleAutoMissed()</strong></td><td>Cron job (external)</td><td>Finds 'prepared' orders where pickupTime + 3 hours has passed. Calls syncFinancials(order, 'missed') for each.</td></tr>
+</table>
+
+<h4>getDailyPrice() Logic</h4>
+<pre><code>dailyPrice = mealPlan.basePrice + SUM(
+  for each subscribedMealComponent where enabled:
+    component.price × component.quantity
+)</code></pre>
+
+<h4>Order Status State Machine</h4>
+<div class="mermaid">
+stateDiagram-v2
+  [*] --> scheduled : generateOrders()
+  scheduled --> prepared : cook marks prepared
+  prepared --> picked_up : cook marks picked_up
+  prepared --> missed : auto after 3hrs
+  picked_up --> [*] : syncFinancials (wallet + ledger)
+  missed --> [*] : syncFinancials (wallet + ledger)
+  scheduled --> DELETED : pause/edit
+</div>
+</div></div>
+
+<!-- PAYMENT SERVICE -->
+<div class="card" id="svc-payment">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>💳 PaymentService</h3><span class="tag">app/services/payment_service.ts</span></div>
+<div class="card-body">
+<table><tr><th>Method</th><th>What It Does</th></tr>
+<tr><td><strong>processPayment(data)</strong></td><td><strong>Transaction:</strong> Creates Payment record → updates subscription.amountPaid += amount → sends WhatsApp notification via NotificationService</td></tr>
+<tr><td><strong>updateCookWallet(cookId, amount)</strong></td><td>Adds amount to cook's wallet balance → sends WhatsApp notification to cook about earnings</td></tr>
+<tr><td><strong>processPayout(cookId, amount)</strong></td><td><strong>Transaction:</strong> Checks wallet ≥ amount → deducts from wallet → creates Payment(type='payout') → sends WhatsApp notification</td></tr>
+</table>
+
+<h4>Financial Flow Diagram</h4>
+<div class="mermaid">
+graph LR
+  A[Consumer Pays] -->|processPayment| B[subscription.amountPaid += $$]
+  C[Order Picked Up] -->|syncFinancials| D[subscription.amountConsumed += $$]
+  C -->|updateCookWallet| E[cook.wallet += $$]
+  F[Cook Requests Payout] -->|processPayout| G[cook.wallet -= $$]
+  B --> H{Due = amountConsumed - amountPaid}
+  D --> H
+  H -->|due > 0| I[Consumer owes money]
+  H -->|due <= 0| J[Consumer has credit]
+</div>
+</div></div>
+
+<!-- NOTIFICATION SERVICE -->
+<div class="card" id="svc-notification">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>🔔 NotificationService</h3><span class="tag">app/services/notification_service.ts</span></div>
+<div class="card-body">
+<p>Central hub for all user-facing notifications. All methods are called <strong>async/fire-and-forget</strong> (failures are logged, not thrown).</p>
+<table><tr><th>Method</th><th>Triggered By</th><th>Message</th></tr>
+<tr><td><strong>notifyPaymentSuccess(payment)</strong></td><td>PaymentService.processPayment</td><td>WhatsApp to consumer: "Your payment of ₹X for 'Plan' received"</td></tr>
+<tr><td><strong>notifyCookEarnings(cook, amount)</strong></td><td>PaymentService.updateCookWallet</td><td>WhatsApp to cook: "You earned ₹X for a meal fulfillment"</td></tr>
+<tr><td><strong>notifyPayoutSuccess(cook, amount)</strong></td><td>PaymentService.processPayout</td><td>WhatsApp to cook: "Payout of ₹X initiated"</td></tr>
+<tr><td><strong>notifyNewOrderNote(note)</strong></td><td>OrderNotesController.store</td><td>WhatsApp to the OTHER party: if consumer wrote → notify cook; if cook wrote → notify consumer</td></tr>
+</table>
+</div></div>
+
+<!-- CLOUDINARY SERVICE -->
+<div class="card" id="svc-cloudinary">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>☁️ CloudinaryService</h3><span class="tag">app/services/cloudinary_service.ts</span></div>
+<div class="card-body">
+<table><tr><th>Method</th><th>What It Does</th></tr>
+<tr><td><strong>uploadImage(fileData)</strong></td><td>Uploads base64/file to Cloudinary CDN. Returns the hosted URL. Falls back to simulation if credentials missing.</td></tr>
+<tr><td><strong>deleteImage(publicId)</strong></td><td>Deletes an image from Cloudinary (simulated for now).</td></tr>
+</table>
+<p>Used by: CookProfilesController (kitchenImage, bannerImage) and MealPlansController (bannerImage)</p>
+</div></div>
+
+<!-- WHATSAPP SERVICE -->
+<div class="card" id="svc-whatsapp">
+<div class="card-header" onclick="this.parentElement.classList.toggle('open')"><h3>📱 WhatsAppService</h3><span class="tag">app/services/whatsapp_service.ts</span></div>
+<div class="card-body">
+<p>Uses <code>whatsapp-web.js</code> library with Puppeteer to send real WhatsApp messages through an authenticated session.</p>
+<table><tr><th>Feature</th><th>Details</th></tr>
+<tr><td><strong>Auth</strong></td><td>LocalAuth strategy with clientId 'mymeal' — persists session across restarts</td></tr>
+<tr><td><strong>QR Scan</strong></td><td>Prints QR code to console on first launch for WhatsApp Web authentication</td></tr>
+<tr><td><strong>sendMessage(phone, text)</strong></td><td>Formats phone number to WhatsApp ID (removes non-digits, appends @c.us), sends message</td></tr>
+<tr><td><strong>Readiness</strong></td><td>Tracks isReady state — messages are skipped if client not yet initialized</td></tr>
+</table>
+</div></div>
+</section>
+
+</main>
+
+<script>
+  // Initialize Mermaid with dark theme
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#6c5ce7',
+      primaryTextColor: '#e0e0e0',
+      primaryBorderColor: '#2a2a3e',
+      lineColor: '#a29bfe',
+      secondaryColor: '#1a1a2e',
+      tertiaryColor: '#12121a',
+      background: '#12121a',
+      mainBkg: '#1a1a2e',
+      nodeBorder: '#6c5ce7',
+      clusterBkg: '#12121a',
+      clusterBorder: '#2a2a3e',
+      titleColor: '#a29bfe',
+      edgeLabelBackground: '#12121a',
+      fontSize: '14px',
+    }
+  });
+
+  // Sidebar active link highlight
+  const links = document.querySelectorAll('.sidebar a');
+  const sections = document.querySelectorAll('.section, .card[id]');
+  
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const top = section.offsetTop - 100;
+      if (window.pageYOffset >= top) {
+        current = section.getAttribute('id');
+      }
+    });
+    links.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) {
+        link.classList.add('active');
+      }
+    });
+  });
+
+  // Smooth scroll
+  links.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>
