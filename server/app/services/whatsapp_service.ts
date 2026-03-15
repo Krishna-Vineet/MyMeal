@@ -1,51 +1,72 @@
-import env from '#start/env'
+import { Client, LocalAuth } from 'whatsapp-web.js'
 
 export default class WhatsAppService {
+  private client: Client
+  private isReady: boolean = false
+
+  constructor() {
+    this.client = new Client({
+      authStrategy: new LocalAuth({
+        clientId: 'mymeal'   // session folder name
+      }),
+      puppeteer: {
+        headless: true
+      }
+    })
+
+    this.initialize()
+  }
+
+  private initialize() {
+    this.client.on('qr', (qr) => {
+      console.log('\nScan this QR in WhatsApp:\n')
+      console.log(qr)
+    })
+
+    this.client.on('ready', () => {
+      console.log('✅ WhatsApp Client Ready')
+      this.isReady = true
+    })
+
+    this.client.on('auth_failure', () => {
+      console.log('❌ Auth failed')
+    })
+
+    this.client.on('disconnected', () => {
+      console.log('⚠️ WhatsApp disconnected')
+      this.isReady = false
+    })
+
+    this.client.initialize()
+  }
+
   /**
-   * Send a WhatsApp message
-   * @param phone Consumer or Cook phone number
-   * @param text Message body
+   * Send WhatsApp message
    */
   public async sendMessage(phone: string, text: string) {
-    const apiKey = env.get('WA_API_KEY')
-
-    if (!apiKey) {
-      console.log(`\n--- WHATSAPP SIMULATION (API KEY MISSING) ---`)
-      console.log(`TO: ${phone}`)
-      console.log(`MESSAGE: ${text}`)
-      console.log(`---------------------------\n`)
-      return true
-    }
-
     try {
-      // Mocking the call to WhatsApp Business API
-      // Since I don't have the exact endpoint from the user yet, I'll use a placeholder.
-      // But I'll structured it correctly for a real API.
-      const response = await fetch('https://graph.facebook.com/v17.0/YOUR_PHONE_NUMBER_ID/messages', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: phone,
-          type: 'text',
-          text: { body: text },
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('WhatsApp API Error:', errorData)
+      if (!this.isReady) {
+        console.log('WhatsApp not ready yet')
         return false
       }
 
-      console.log(`WhatsApp message sent to ${phone}`)
+      const waId = this.formatPhone(phone)
+
+      await this.client.sendMessage(waId, text)
+
+      console.log(`✅ Message sent to ${phone}`)
       return true
     } catch (error) {
-      console.error('Failed to send WhatsApp message:', error)
+      console.error('❌ WhatsApp send failed:', error)
       return false
     }
+  }
+
+  /**
+   * Convert phone → WhatsApp ID
+   */
+  private formatPhone(phone: string) {
+    const cleaned = phone.replace(/\D/g, '')
+    return `${cleaned}@c.us`
   }
 }

@@ -19,19 +19,16 @@ router.get('/health', () => {
   return { status: 'ok', service: 'mymeal-api' }
 })
 
-const AuthController = () => import('#controllers/auth_controller')
-
-const CookProfilesController = () => import('#controllers/cook_profiles_controller')
 
 router
   .group(() => {
     router
       .group(() => {
-        router.post('register', [AuthController, 'register'])
-        router.post('login', [AuthController, 'login'])
+        router.post('register', [controllers.Auth, 'register'])
+        router.post('login', [controllers.Auth, 'login'])
 
         // Protected Route
-        router.post('logout', [AuthController, 'logout']).use(middleware.auth())
+        router.post('logout', [controllers.Auth, 'logout']).use(middleware.auth())
       })
       .prefix('auth')
       .as('auth')
@@ -46,79 +43,72 @@ router
 
     router
       .group(() => {
-        router.post('/', [CookProfilesController, 'store'])
-        router.patch('/', [CookProfilesController, 'update'])
+        router.post('/', [controllers.CookProfiles, 'store'])
+        router.patch('/', [controllers.CookProfiles, 'update'])
       })
       .prefix('cook-profiles')
       .use([middleware.auth(), middleware.role('cook')])
 
-    const MealPlansController = () => import('#controllers/meal_plans_controller')
 
     router
       .group(() => {
-        router.get('/', [MealPlansController, 'index'])
-        router.post('/', [MealPlansController, 'store'])
-        router.patch('/:id', [MealPlansController, 'update'])
+        router.get('/', [controllers.MealPlans, 'index'])
+        router.post('/', [controllers.MealPlans, 'store'])
+        router.patch('/:id', [controllers.MealPlans, 'update'])
       })
       .prefix('meal-plans')
       .use([middleware.auth(), middleware.role('cook')])
 
-    const DiscoversController = () => import('#controllers/discovers_controller')
 
     router
       .group(() => {
-        router.get('/cooks', [DiscoversController, 'index'])
-        router.get('/cooks/:id', [DiscoversController, 'show'])
+        router.get('/cooks', [controllers.Discovers, 'index'])
+        router.get('/cooks/:id', [controllers.Discovers, 'show'])
       })
       .prefix('discover')
       .use([middleware.auth(), middleware.role('consumer')])
 
-    const SubscriptionsController = () => import('#controllers/subscriptions_controller')
 
     router
       .group(() => {
-        router.get('/', [SubscriptionsController, 'index'])
-        router.get('/:id', [SubscriptionsController, 'show'])
-        router.post('/', [SubscriptionsController, 'store'])
-        router.patch('/:id', [SubscriptionsController, 'update'])
-        router.patch('/:id/status', [SubscriptionsController, 'updateStatus'])
+        router.get('/', [controllers.Subscriptions, 'index'])
+        router.get('/:id', [controllers.Subscriptions, 'show'])
+        router.post('/', [controllers.Subscriptions, 'store'])
+        router.patch('/:id', [controllers.Subscriptions, 'update'])
+        router.patch('/:id/status', [controllers.Subscriptions, 'updateStatus'])
       })
       .prefix('subscriptions')
       .use([middleware.auth(), middleware.role('consumer')])
 
-    const OrdersController = () => import('#controllers/orders_controller')
-    const OrderNotesController = () => import('#controllers/order_notes_controller')
 
     router
       .group(() => {
-        router.get('/cook', [OrdersController, 'indexForCook']).use(middleware.role('cook'))
-        router.get('/consumer', [OrdersController, 'indexForConsumer']).use(middleware.role('consumer'))
-        router.patch('/:id/status', [OrdersController, 'updateStatus']).use(middleware.role('cook'))
+        router.get('/cook', [controllers.Orders, 'indexForCook']).use(middleware.role('cook'))
+        router.get('/consumer', [controllers.Orders, 'indexForConsumer']).use(middleware.role('consumer'))
+        router.patch('/:id/status', [controllers.Orders, 'updateStatus']).use(middleware.role('cook'))
         
-        router.get('/:id/notes', [OrderNotesController, 'index'])
-        router.post('/:id/notes', [OrderNotesController, 'store'])
+        router.get('/:id/notes', [controllers.OrderNotes, 'index'])
+        router.post('/:id/notes', [controllers.OrderNotes, 'store'])
       })
       .prefix('orders')
       .use(middleware.auth())
 
-    const PaymentsController = () => import('#controllers/payments_controller')
 
     router
       .group(() => {
-        router.post('/', [PaymentsController, 'store']).use(middleware.role('consumer'))
-        router.get('/subscription/:id', [PaymentsController, 'index']).use(middleware.role('consumer'))
-        router.get('/wallet/status', [PaymentsController, 'walletStatus']).as('wallet.status')
-        router.post('/payout', [PaymentsController, 'payout']).as('payout')
+        router.post('/', [controllers.Payments, 'store']).use(middleware.role('consumer'))
+        router.get('/subscription/:id', [controllers.Payments, 'index']).use(middleware.role('consumer'))
+        router.get('/wallet/status', [controllers.Payments, 'walletStatus']).as('wallet.status')
+        router.post('/payout', [controllers.Payments, 'payout']).as('payout')
       })
       .prefix('payments')
       .use(middleware.auth())
 
-    const ReviewsController = () => import('#controllers/reviews_controller')
 
     // Reviews
     router.group(() => {
-      router.post('/', [ReviewsController, 'store']).as('reviews.store')
-      router.get('/cook/:id', [ReviewsController, 'index']).as('reviews.index')
+      router.post('/', [controllers.Reviews, 'store']).as('reviews.store')
+      router.get('/cook/:id', [controllers.Reviews, 'index']).as('reviews.index')
     }).prefix('reviews').use(middleware.auth())
   })
   .prefix('/api/v1')

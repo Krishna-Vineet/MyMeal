@@ -828,3 +828,16 @@ This becomes a **complete food marketplace platform**.
 ---
 
 If you want, I can also show you **the 12 biggest architectural mistakes people make in projects like MyMeal** (knowing them now will save you **months of refactoring later**).
+
+
+
+
+
+
+
+
+
+
+
+
+Add rate limiting
