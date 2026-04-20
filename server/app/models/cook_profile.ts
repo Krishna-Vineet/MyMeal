@@ -1,5 +1,6 @@
 import { CookProfileSchema } from '#database/schema'
-import { belongsTo, hasMany, column } from '@adonisjs/lucid/orm'
+import { beforeCreate, belongsTo, hasMany, column } from '@adonisjs/lucid/orm'
+import { randomUUID } from 'node:crypto'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 
 import User from '#models/user'
@@ -25,6 +26,11 @@ export default class CookProfile extends CookProfileSchema {
 
   @column()
   declare wallet: string
+
+  @beforeCreate()
+  static async assignUuid(profile: CookProfile) {
+    profile.id = randomUUID()
+  }
   
   /**
    * belongsTo establishes the inverse of hasOne.

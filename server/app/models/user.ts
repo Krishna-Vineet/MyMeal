@@ -4,7 +4,8 @@ import { compose } from '@adonisjs/core/helpers'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { type AccessToken, DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 
-import { hasOne, hasMany, column } from '@adonisjs/lucid/orm'
+import { beforeCreate, beforeSave, hasOne, hasMany, column } from '@adonisjs/lucid/orm'
+import { randomUUID } from 'node:crypto'
 import type { HasOne, HasMany } from '@adonisjs/lucid/types/relations'
 import CookProfile from '#models/cook_profile'
 import Subscription from '#models/subscription'
@@ -27,6 +28,18 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
 
   @column()
   declare phone: string | null
+
+  @beforeCreate()
+  static async assignUuid(user: User) {
+    user.id = randomUUID()
+  }
+
+  @beforeSave()
+  static async autoHashPassword(user: User) {
+    if (user.$dirty.password) {
+      user.password = await hash.make(user.password)
+    }
+  }
 
   /**
    * 🎓 Relationships in AdonisJS

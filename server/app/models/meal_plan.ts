@@ -1,5 +1,6 @@
 import { MealPlanSchema } from '#database/schema'
-import { belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import { beforeCreate, belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import { randomUUID } from 'node:crypto'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 
 import CookProfile from '#models/cook_profile'
@@ -10,6 +11,11 @@ import PickupSlot from '#models/pickup_slot'
 export default class MealPlan extends MealPlanSchema {
   @belongsTo(() => CookProfile)
   declare cook: BelongsTo<typeof CookProfile>
+
+  @beforeCreate()
+  static async assignUuid(plan: MealPlan) {
+    plan.id = randomUUID()
+  }
 
   @hasMany(() => MealComponent)
   declare mealComponents: HasMany<typeof MealComponent>

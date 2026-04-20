@@ -1,5 +1,6 @@
 import { SubscriptionSchema } from '#database/schema'
-import { belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import { beforeCreate, belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import { randomUUID } from 'node:crypto'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 
 import User from '#models/user'
@@ -12,6 +13,11 @@ import Payment from '#models/payment'
 export default class Subscription extends SubscriptionSchema {
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
+
+  @beforeCreate()
+  static async assignUuid(sub: Subscription) {
+    sub.id = randomUUID()
+  }
 
   @belongsTo(() => MealPlan)
   declare mealPlan: BelongsTo<typeof MealPlan>
