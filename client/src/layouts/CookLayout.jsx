@@ -1,8 +1,9 @@
-import { Link, NavLink, Outlet } from "react-router-dom"
+import { Link, Navigate, NavLink, Outlet } from "react-router-dom"
 import useAuthStore from "../store/authStore"
 
 const links = [
   { to: "/cook/profile", label: "Profile" },
+  { to: "/cook/meal-plans", label: "Meal plans" },
   { to: "/cook/orders", label: "Orders" },
   { to: "/cook/settings", label: "Settings" },
 ]
@@ -10,17 +11,24 @@ const links = [
 const linkClass = ({ isActive }) =>
   [
     "rounded-2xl px-4 py-3 text-sm font-semibold transition",
-    isActive ? "bg-[#2b0f10] text-white shadow-lg shadow-rose-200/60" : "text-[#5f4545] hover:bg-white/80",
+    isActive ? "bg-[#2b0f10] !text-white shadow-lg shadow-rose-200/60" : "text-[#5f4545] hover:bg-white/80",
   ].join(" ")
 
 export default function CookLayout() {
   const user = useAuthStore((state) => state.user)
 
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  if (user.role !== "cook") {
+    return <Navigate to="/app/orders" replace />
+  }
+
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
       <aside className="hidden border-r border-white/70 bg-white/60 p-6 backdrop-blur-xl lg:flex lg:flex-col">
         <Link to="/" className="mb-8 flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[#d62828] to-[#f77f00] text-lg font-black text-white shadow-lg shadow-rose-200/60">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[#d62828] to-[#f77f00] text-lg font-black !text-white shadow-lg shadow-rose-200/60">
             M
           </span>
           <div>
@@ -43,10 +51,10 @@ export default function CookLayout() {
           ))}
         </nav>
 
-        <div className="mt-auto rounded-3xl bg-[#2b0f10] p-5 text-white shadow-2xl shadow-rose-200/60">
+        <div className="mt-auto rounded-3xl bg-[#2b0f10] p-5 !text-white shadow-2xl shadow-rose-200/60">
           <p className="text-sm font-semibold text-rose-200">Active subscriptions</p>
           <p className="mt-2 text-2xl font-black">48</p>
-          <p className="mt-2 text-sm text-white/75">You have 12 pickup slots open for today.</p>
+          <p className="mt-2 text-sm !text-white/75">You have 12 pickup slots open for today.</p>
         </div>
       </aside>
 
@@ -57,7 +65,7 @@ export default function CookLayout() {
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8b6767]">Cook mode</p>
               <h1 className="text-xl font-black text-[#2b0f10]">Manage meals, slots, and orders</h1>
             </div>
-            <Link to="/cook/profile" className="rounded-full bg-[#2b0f10] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-200/60 transition hover:-translate-y-0.5">
+            <Link to="/cook/profile" className="rounded-full bg-[#2b0f10] px-4 py-2 text-sm font-semibold !text-white shadow-lg shadow-rose-200/60 transition hover:-translate-y-0.5">
               View kitchen
             </Link>
           </div>
@@ -68,7 +76,7 @@ export default function CookLayout() {
         </main>
 
         <nav className="sticky bottom-0 z-20 border-t border-white/70 bg-white/80 px-3 py-3 backdrop-blur-xl lg:hidden">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {links.map((link) => (
               <NavLink key={link.to} to={link.to} className={linkClass}>
                 {link.label}

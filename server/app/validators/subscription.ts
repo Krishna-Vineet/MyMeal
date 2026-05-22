@@ -25,6 +25,29 @@ export const createSubscriptionValidator = vine.compile(
 )
 
 /**
+ * Partial updates for PATCH — slot change and/or component snapshot refresh.
+ */
+export const updateSubscriptionValidator = vine.compile(
+    vine.object({
+        mealPlanId: vine.string().trim().optional(),
+        pickupSlotId: vine.string().trim().optional(),
+        startDate: vine.string().trim().optional(),
+        endDate: vine.string().trim().optional(),
+        duration: vine.enum(['one_time', '1_week', '2_week', '1_month', '3_month']).optional(),
+        advancePayment: vine.number().min(0).optional(),
+        components: vine
+            .array(
+                vine.object({
+                    mealComponentId: vine.string().trim(),
+                    quantity: vine.number().min(0),
+                    enabled: vine.boolean().optional(),
+                })
+            )
+            .optional(),
+    })
+)
+
+/**
  * Validator for updating a subscription status (e.g., active, cancelled, paused)
  */
 export const updateSubscriptionStatusValidator = vine.compile(

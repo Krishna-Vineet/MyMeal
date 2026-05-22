@@ -8,8 +8,9 @@ import Home from "../pages/Home"
 import Login from "../pages/Login"
 import Register from "../pages/Register"
 import Discover from "../pages/Discover"
-import Cooks from "../pages/Cooks"
 import Subscribe from "../pages/Subscribe"
+import KitchenDetail from "../pages/KitchenDetail"
+import CookMealPlans from "../pages/CookMealPlans"
 import Orders from "../pages/Orders"
 import Settings from "../pages/Settings"
 import Profile from "../pages/Profile"
@@ -24,13 +25,13 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/discover" element={<Discover />} />
-          <Route path="/cooks" element={<Cooks />} />
+          <Route path="/discover/:id" element={<KitchenDetail />} />
         </Route>
 
         <Route element={<ConsumerLayout />}>
           <Route path="/app" element={<Navigate to="/app/orders" replace />} />
           <Route path="/app/discover" element={<Discover />} />
-          <Route path="/app/cooks" element={<Cooks />} />
+          <Route path="/app/discover/:id" element={<KitchenDetail />} />
           <Route path="/app/subscribe" element={<Subscribe />} />
           <Route path="/app/orders" element={<Orders />} />
           <Route path="/app/settings" element={<Settings />} />
@@ -39,6 +40,7 @@ export default function AppRouter() {
         <Route element={<CookLayout />}>
           <Route path="/cook" element={<Navigate to="/cook/profile" replace />} />
           <Route path="/cook/profile" element={<Profile />} />
+          <Route path="/cook/meal-plans" element={<CookMealPlans />} />
           <Route path="/cook/orders" element={<Orders />} />
           <Route path="/cook/settings" element={<Settings />} />
         </Route>

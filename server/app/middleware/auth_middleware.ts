@@ -15,6 +15,10 @@ export default class AuthMiddleware {
     } = {}
   ) {
     await ctx.auth.authenticateUsing(options.guards)
+    const user = ctx.auth.user!
+    if (user.isActive === false) {
+      return ctx.response.forbidden({ message: 'This account has been deactivated.' })
+    }
     return next()
   }
 }

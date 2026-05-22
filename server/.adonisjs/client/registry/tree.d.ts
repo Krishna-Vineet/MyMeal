@@ -2,6 +2,14 @@
 import type { routes } from './index.ts'
 
 export interface ApiDefinition {
+  discovers: {
+    index: typeof routes['discovers.index']
+    show: typeof routes['discovers.show']
+  }
+  reviews: {
+    index: typeof routes['reviews.index']
+    store: typeof routes['reviews.store']
+  }
   auth: {
     auth: {
       register: typeof routes['auth.auth.register']
@@ -12,6 +20,9 @@ export interface ApiDefinition {
   profile: {
     profile: {
       show: typeof routes['profile.profile.show']
+      update: typeof routes['profile.profile.update']
+      updatePassword: typeof routes['profile.profile.update_password']
+      deactivate: typeof routes['profile.profile.deactivate']
     }
   }
   cookProfiles: {
@@ -22,10 +33,7 @@ export interface ApiDefinition {
     index: typeof routes['meal_plans.index']
     store: typeof routes['meal_plans.store']
     update: typeof routes['meal_plans.update']
-  }
-  discovers: {
-    index: typeof routes['discovers.index']
-    show: typeof routes['discovers.show']
+    destroy: typeof routes['meal_plans.destroy']
   }
   subscriptions: {
     index: typeof routes['subscriptions.index']
@@ -51,8 +59,4 @@ export interface ApiDefinition {
     status: typeof routes['wallet.status']
   }
   payout: typeof routes['payout']
-  reviews: {
-    store: typeof routes['reviews.store']
-    index: typeof routes['reviews.index']
-  }
 }

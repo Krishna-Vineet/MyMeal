@@ -25,7 +25,7 @@ export default function Home() {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/app/discover" className="flex items-center gap-2 rounded-full hero-gradient px-8 py-4 font-bold text-white shadow-lg shadow-orange-200/70 transition hover:-translate-y-1">
+              <Link to="/app/discover" className="flex items-center gap-2 rounded-full hero-gradient px-8 py-4 font-bold !text-white shadow-lg shadow-orange-200/70 transition hover:-translate-y-1">
                 Explore meals <ArrowRight className="h-5 w-5" />
               </Link>
               <Link to="/register" className="rounded-full border border-orange-200 bg-white px-8 py-4 font-bold text-[#7a4c18] transition hover:bg-orange-50">
@@ -54,20 +54,20 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-4"
           >
-            <div className="hero-gradient group relative overflow-hidden rounded-4xl p-8 text-white shadow-2xl shadow-orange-200/60 transition-all hover:scale-[1.02]">
+            <div className="hero-gradient group relative overflow-hidden rounded-4xl p-8 !text-white shadow-2xl shadow-orange-200/60 transition-all hover:scale-[1.02]">
               <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl group-hover:bg-white/20 transition-all"></div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/80 flex items-center gap-2">
-                <Star className="h-4 w-4 fill-white text-white" /> Today’s spotlight
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] !text-white/80 flex items-center gap-2">
+                <Star className="h-4 w-4 fill-white !text-white" /> Today’s spotlight
               </p>
               <h2 className="mt-4 text-3xl font-black">Dinner Thali</h2>
-              <p className="mt-2 text-lg text-white/80">College Gate at 7:00 PM or Home Kitchen at 8:15 PM.</p>
+              <p className="mt-2 text-lg !text-white/80">College Gate at 7:00 PM or Home Kitchen at 8:15 PM.</p>
               <div className="mt-8 grid grid-cols-2 gap-4 text-sm font-bold">
                 <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-md">
-                  <p className="text-white/70">Calories</p>
+                  <p className="!text-white/70">Calories</p>
                   <p className="mt-1 text-2xl font-black">610 kcal</p>
                 </div>
                 <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-md">
-                  <p className="text-white/70">Rating</p>
+                  <p className="!text-white/70">Rating</p>
                   <p className="mt-1 text-2xl font-black">4.8 / 5</p>
                 </div>
               </div>
@@ -86,7 +86,7 @@ export default function Home() {
                     transition={{ delay: index * 0.1 }}
                     className="flex items-start gap-4"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1f1308] text-sm font-bold text-white shadow-lg">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1f1308] text-sm font-bold !text-white shadow-lg">
                       {index + 1}
                     </span>
                     <p className="pt-2 text-lg font-medium text-[#563f2e]">{step}</p>
@@ -104,7 +104,7 @@ export default function Home() {
               whileHover={{ y: -5 }}
               className="soft-card rounded-3xl p-8 transition-shadow hover:shadow-xl group"
             >
-              <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#9a4b00] group-hover:bg-[#1f1308] group-hover:text-white transition-colors">
+              <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#9a4b00] group-hover:bg-[#1f1308] group-hover:!text-white transition-colors">
                 {i === 0 ? <Users /> : i === 1 ? <Zap /> : <MapPin />}
               </div>
               <h3 className="text-2xl font-black text-[#1f1308]">{feature.title}</h3>

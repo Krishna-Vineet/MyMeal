@@ -20,8 +20,14 @@ export default class RoleMiddleware {
       allowedRoles = options.guards
     }
 
-    if (allowedRoles.length > 0 && !(allowedRoles as unknown as string[]).includes(user.role)) {
-      return ctx.response.forbidden({ message: 'Forbidden: You do not have the required role.' })
+    // Convert everything to lowercase to avoid case-sensitivity issues
+    const userRole = user.role?.toLowerCase()
+    const normalizedAllowedRoles = allowedRoles.map(r => r.toLowerCase())
+
+    if (normalizedAllowedRoles.length > 0 && !normalizedAllowedRoles.includes(userRole)) {
+      return ctx.response.forbidden({ 
+        message: `Forbidden: You do not have the required role. Required: ${normalizedAllowedRoles.join(', ')}. Your role: ${userRole || 'none'}` 
+      })
     }
 
     return await next()

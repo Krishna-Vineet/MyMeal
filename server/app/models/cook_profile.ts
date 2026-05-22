@@ -22,9 +22,6 @@ export default class CookProfile extends CookProfileSchema {
   declare kitchenImage: string | null
 
   @column()
-  declare bannerImage: string | null
-
-  @column()
   declare wallet: string
 
   @beforeCreate()
@@ -39,12 +36,12 @@ export default class CookProfile extends CookProfileSchema {
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
-  @hasMany(() => MealPlan)
+  @hasMany(() => MealPlan, { foreignKey: 'cookId' })
   declare mealPlans: HasMany<typeof MealPlan>
 
   @hasMany(() => PickupSlot)
   declare pickupSlots: HasMany<typeof PickupSlot>
 
-  @hasMany(() => Review)
+  @hasMany(() => Review, { foreignKey: 'cookId' })
   declare reviews: HasMany<typeof Review>
 }

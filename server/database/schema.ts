@@ -33,12 +33,10 @@ export class AuthAccessTokenSchema extends BaseModel {
 }
 
 export class CookProfileSchema extends BaseModel {
-  static $columns = ['address', 'bannerImage', 'bio', 'city', 'createdAt', 'id', 'kitchenImage', 'kitchenName', 'latitude', 'longitude', 'phone', 'updatedAt', 'userId', 'wallet'] as const
+  static $columns = ['address', 'bio', 'city', 'createdAt', 'id', 'kitchenImage', 'kitchenName', 'latitude', 'longitude', 'phone', 'updatedAt', 'userId', 'wallet'] as const
   $columns = CookProfileSchema.$columns
   @column()
   declare address: string | null
-  @column()
-  declare bannerImage: string | null
   @column()
   declare bio: string | null
   @column()

@@ -4,6 +4,7 @@ import { UserPlus, User, ChefHat, Mail, Lock, Loader2, ArrowRight, Phone } from 
 import useAuthStore from "../store/authStore"
 import useToastStore from "../store/toastStore"
 import { authService } from "../services/authService"
+import { getApiErrorMessage } from "../api/axios"
 import MotionPage from "../components/MotionPage"
 
 export default function Register() {
@@ -41,7 +42,7 @@ export default function Register() {
       navigate(user.role === "cook" ? "/cook/profile" : "/app/discover")
     } catch (error) {
        console.error(error)
-       addToast(error.response?.data?.message || "Registration failed. Please check your details.", "error")
+       addToast(getApiErrorMessage(error, "Registration failed. Please check your details."), "error")
     } finally {
       setLoading(false)
     }
@@ -71,7 +72,7 @@ export default function Register() {
           </div>
           
           <div className="mt-auto pt-10">
-             <div className="hero-gradient rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+             <div className="hero-gradient rounded-3xl p-6 !text-white shadow-xl relative overflow-hidden">
                 <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
                 <p className="font-bold">Neighborhood focused</p>
                 <p className="text-sm opacity-80 mt-1">Join local residents today.</p>
@@ -163,7 +164,7 @@ export default function Register() {
                     onClick={() => setFormData({ ...formData, role: "consumer" })}
                     className={`flex items-center justify-center gap-2 rounded-2xl py-4 font-bold transition-all ${
                       formData.role === "consumer"
-                        ? "bg-[#1f1308] text-white shadow-xl shadow-orange-200"
+                        ? "bg-[#1f1308] !text-white shadow-xl shadow-orange-200"
                         : "bg-white border border-orange-100 text-[#614937] hover:bg-orange-50"
                     }`}
                   >
@@ -174,7 +175,7 @@ export default function Register() {
                     onClick={() => setFormData({ ...formData, role: "cook" })}
                     className={`flex items-center justify-center gap-2 rounded-2xl py-4 font-bold transition-all ${
                       formData.role === "cook"
-                        ? "bg-[#1f1308] text-white shadow-xl shadow-orange-200"
+                        ? "bg-[#1f1308] !text-white shadow-xl shadow-orange-200"
                         : "bg-white border border-orange-100 text-[#614937] hover:bg-orange-50"
                     }`}
                   >
@@ -187,7 +188,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full overflow-hidden rounded-3xl hero-gradient px-6 py-5 font-black text-white shadow-xl shadow-orange-200 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-70 disabled:hover:translate-y-0"
+              className="group relative w-full overflow-hidden rounded-3xl hero-gradient px-6 py-5 font-black !text-white shadow-xl shadow-orange-200 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-70 disabled:hover:translate-y-0"
             >
               <span className="relative z-10 flex items-center justify-center gap-2 text-lg">
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Create Account"} 

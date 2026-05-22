@@ -2,27 +2,27 @@ import api from "../api/axios"
 
 export const subscriptionService = {
   getSubscriptions: async () => {
-    const response = await api.get("/subscriptions")
-    return response.data
+    const { data } = await api.get("subscriptions")
+    return data
   },
 
   getSubscriptionById: async (id) => {
-    const response = await api.get(`/subscriptions/${id}`)
-    return response.data
+    const { data } = await api.get(`subscriptions/${id}`)
+    return data
   },
 
-  createSubscription: async (data) => {
-    const response = await api.post("/subscriptions", data)
-    return response.data
+  createSubscription: async (payload) => {
+    const { data } = await api.post("subscriptions", payload)
+    return data
   },
 
-  updateSubscription: async (id, data) => {
-    const response = await api.patch(`/subscriptions/${id}`, data)
-    return response.data
+  updateSubscription: async (id, payload) => {
+    const { data } = await api.patch(`subscriptions/${id}`, payload)
+    return data
   },
 
   updateStatus: async (id, status) => {
-    const response = await api.patch(`/subscriptions/${id}/status`, { status })
-    return response.data
-  }
+    const { data } = await api.patch(`subscriptions/${id}/status`, { status })
+    return data
+  },
 }

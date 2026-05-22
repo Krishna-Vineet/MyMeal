@@ -7,6 +7,42 @@ import type { InferInput, SimpleError } from '@vinejs/vine/types'
 export type ParamValue = string | number | bigint | boolean
 
 export interface Registry {
+  'discovers.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/discover/cooks'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/discovers_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/discovers_controller').default['index']>>>
+    }
+  }
+  'discovers.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/discover/cooks/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/discovers_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/discovers_controller').default['show']>>>
+    }
+  }
+  'reviews.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/reviews/cook/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/reviews_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviews_controller').default['index']>>>
+    }
+  }
   'auth.auth.register': {
     methods: ["POST"]
     pattern: '/api/v1/auth/register'
@@ -53,6 +89,42 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['show']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['show']>>>
+    }
+  }
+  'profile.profile.update': {
+    methods: ["PATCH"]
+    pattern: '/api/v1/account/profile'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/profile').updateProfileValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/profile').updateProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'profile.profile.update_password': {
+    methods: ["PATCH"]
+    pattern: '/api/v1/account/profile/password'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/profile').updatePasswordValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/profile').updatePasswordValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['updatePassword']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['updatePassword']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'profile.profile.deactivate': {
+    methods: ["POST"]
+    pattern: '/api/v1/account/profile/deactivate'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/profile').deactivateAccountValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/profile').deactivateAccountValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['deactivate']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['deactivate']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'cook_profiles.store': {
@@ -115,28 +187,16 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/meal_plans_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
-  'discovers.index': {
-    methods: ["GET","HEAD"]
-    pattern: '/api/v1/discover/cooks'
-    types: {
-      body: {}
-      paramsTuple: []
-      params: {}
-      query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/discovers_controller').default['index']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/discovers_controller').default['index']>>>
-    }
-  }
-  'discovers.show': {
-    methods: ["GET","HEAD"]
-    pattern: '/api/v1/discover/cooks/:id'
+  'meal_plans.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/meal-plans/:id'
     types: {
       body: {}
       paramsTuple: [ParamValue]
       params: { id: ParamValue }
       query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/discovers_controller').default['show']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/discovers_controller').default['show']>>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/meal_plans_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/meal_plans_controller').default['destroy']>>>
     }
   }
   'subscriptions.index': {
@@ -179,10 +239,10 @@ export interface Registry {
     methods: ["PATCH"]
     pattern: '/api/v1/subscriptions/:id'
     types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/subscription').createSubscriptionValidator)>>
+      body: ExtractBody<InferInput<(typeof import('#validators/subscription').updateSubscriptionValidator)>>
       paramsTuple: [ParamValue]
       params: { id: ParamValue }
-      query: ExtractQuery<InferInput<(typeof import('#validators/subscription').createSubscriptionValidator)>>
+      query: ExtractQuery<InferInput<(typeof import('#validators/subscription').updateSubscriptionValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['update']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
@@ -191,12 +251,12 @@ export interface Registry {
     methods: ["PATCH"]
     pattern: '/api/v1/subscriptions/:id/status'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/subscription').updateSubscriptionStatusValidator)>>
       paramsTuple: [ParamValue]
       params: { id: ParamValue }
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/subscription').updateSubscriptionStatusValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['updateStatus']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['updateStatus']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['updateStatus']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'orders.index_for_cook': {
@@ -317,18 +377,6 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/review').createReviewValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/reviews_controller').default['store']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviews_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
-    }
-  }
-  'reviews.index': {
-    methods: ["GET","HEAD"]
-    pattern: '/api/v1/reviews/cook/:id'
-    types: {
-      body: {}
-      paramsTuple: [ParamValue]
-      params: { id: ParamValue }
-      query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/reviews_controller').default['index']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviews_controller').default['index']>>>
     }
   }
 }

@@ -1,10 +1,9 @@
-import { Link, NavLink, Outlet } from "react-router-dom"
+import { Link, Navigate, NavLink, Outlet } from "react-router-dom"
 import useAuthStore from "../store/authStore"
 
 const links = [
   { to: "/app/discover", label: "Discover" },
-  { to: "/app/cooks", label: "Cooks" },
-  { to: "/app/subscribe", label: "Subscribe" },
+  { to: "/app/subscribe", label: "Subscriptions" },
   { to: "/app/orders", label: "Orders" },
   { to: "/app/settings", label: "Settings" },
 ]
@@ -12,17 +11,24 @@ const links = [
 const linkClass = ({ isActive }) =>
   [
     "rounded-2xl px-4 py-3 text-sm font-semibold transition",
-    isActive ? "bg-[#1f1308] text-white shadow-lg shadow-orange-200/60" : "text-[#5c4835] hover:bg-white/80",
+    isActive ? "bg-[#1f1308] !text-white shadow-lg shadow-orange-200/60" : "text-[#5c4835] hover:bg-white/80",
   ].join(" ")
 
 export default function ConsumerLayout() {
   const user = useAuthStore((state) => state.user)
 
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  if (user.role !== "consumer") {
+    return <Navigate to="/cook/profile" replace />
+  }
+
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
       <aside className="hidden border-r border-white/70 bg-white/60 p-6 backdrop-blur-xl lg:flex lg:flex-col">
         <Link to="/" className="mb-8 flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl hero-gradient text-lg font-black text-white shadow-lg shadow-orange-200/70">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl hero-gradient text-lg font-black !text-white shadow-lg shadow-orange-200/70">
             M
           </span>
           <div>
@@ -45,10 +51,10 @@ export default function ConsumerLayout() {
           ))}
         </nav>
 
-        <div className="mt-auto rounded-3xl bg-[#1f1308] p-5 text-white shadow-2xl shadow-orange-200/60">
+        <div className="mt-auto rounded-3xl bg-[#1f1308] p-5 !text-white shadow-2xl shadow-orange-200/60">
           <p className="text-sm font-semibold text-orange-200">Today’s pickup</p>
           <p className="mt-2 text-2xl font-black">7:00 PM</p>
-          <p className="mt-2 text-sm text-white/75">College Gate slot is ready for your next order.</p>
+          <p className="mt-2 text-sm !text-white/75">College Gate slot is ready for your next order.</p>
         </div>
       </aside>
 
@@ -59,7 +65,7 @@ export default function ConsumerLayout() {
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8f6f55]">Consumer mode</p>
               <h1 className="text-xl font-black text-[#1f1308]">Browse, subscribe, and track meals</h1>
             </div>
-            <Link to="/app/settings" className="rounded-full bg-[#1f1308] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-200/60 transition hover:-translate-y-0.5">
+            <Link to="/app/settings" className="rounded-full bg-[#1f1308] px-4 py-2 text-sm font-semibold !text-white shadow-lg shadow-orange-200/60 transition hover:-translate-y-0.5">
               Settings
             </Link>
           </div>

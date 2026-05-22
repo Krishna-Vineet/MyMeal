@@ -4,7 +4,7 @@ import useAuthStore from "../store/authStore"
 const navLinkClass = ({ isActive }) =>
   [
     "rounded-full px-4 py-2 text-sm font-medium transition",
-    isActive ? "bg-[#1f1308] text-white shadow-lg shadow-orange-200/60" : "text-[#5c4835] hover:bg-white/80",
+    isActive ? "bg-[#1f1308] !text-white shadow-lg shadow-orange-200/60" : "text-[#5c4835] hover:bg-white/80",
   ].join(" ")
 
 export default function PublicLayout() {
@@ -16,7 +16,7 @@ export default function PublicLayout() {
       <header className="sticky top-0 z-30 border-b border-white/70 bg-white/65 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl hero-gradient text-lg font-black text-white shadow-lg shadow-orange-200/70">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl hero-gradient text-lg font-black !text-white shadow-lg shadow-orange-200/70">
               M
             </span>
             <div>
@@ -32,14 +32,11 @@ export default function PublicLayout() {
             <NavLink to="/discover" className={navLinkClass}>
               Discover
             </NavLink>
-            <NavLink to="/cooks" className={navLinkClass}>
-              Cooks
-            </NavLink>
           </nav>
 
           <div className="flex items-center gap-3">
             {user ? (
-              <Link to={appPath} className="rounded-full bg-[#1f1308] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-200/60 transition hover:-translate-y-0.5">
+              <Link to={appPath} className="rounded-full bg-[#1f1308] px-4 py-2 text-sm font-semibold !text-white shadow-lg shadow-orange-200/60 transition hover:-translate-y-0.5">
                 Open app
               </Link>
             ) : (
@@ -52,7 +49,7 @@ export default function PublicLayout() {
                 </Link>
                 <Link
                   to="/register"
-                  className="rounded-full bg-[#1f1308] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-200/60 transition hover:-translate-y-0.5"
+                  className="rounded-full bg-[#1f1308] px-4 py-2 text-sm font-semibold !text-white shadow-lg shadow-orange-200/60 transition hover:-translate-y-0.5"
                 >
                   Join now
                 </Link>

@@ -11,6 +11,8 @@ export default class DiscoversController {
 
         const query = CookProfile.query()
             .preload('user')
+            .preload('mealPlans', (mq) => mq.where('isActive', true))
+            .withAggregate('reviews', (q) => q.avg('rating').as('avgRating'))
             .select('*')
 
         if (q) {
@@ -41,7 +43,13 @@ export default class DiscoversController {
         }
 
         const cooks = await query
-        return response.ok(cooks)
+        return response.ok(cooks.map(c => {
+            const data = c.toJSON()
+            return {
+                ...data,
+                avgRating: c.$extras.avgRating
+            }
+        }))
     }
 
     /**
@@ -55,12 +63,17 @@ export default class DiscoversController {
                 planQuery.preload('mealComponents')
                 planQuery.preload('pickupSlots')
             })
+            .withAggregate('reviews', (q) => q.avg('rating').as('avgRating'))
             .first()
 
         if (!cook) {
             return response.notFound({ message: 'Cook not found' })
         }
 
-        return response.ok(cook)
+        const data = cook.toJSON()
+        return response.ok({
+            ...data,
+            avgRating: cook.$extras.avgRating
+        })
     }
 }

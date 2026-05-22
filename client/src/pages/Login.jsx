@@ -1,13 +1,16 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { LogIn, User, ChefHat, Mail, Lock, Loader2, ArrowRight, ShoppingBag } from "lucide-react"
 import useAuthStore from "../store/authStore"
 import useToastStore from "../store/toastStore"
 import { authService } from "../services/authService"
+import { getApiErrorMessage } from "../api/axios"
 import MotionPage from "../components/MotionPage"
 
 export default function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const nextPath = searchParams.get("next")
   const loginStore = useAuthStore((state) => state.login)
   const addToast = useToastStore((state) => state.addToast)
   
@@ -27,10 +30,14 @@ export default function Login() {
       loginStore(user, token)
 
       addToast(`Welcome back, ${user.name}!`, "success")
-      navigate(user.role === "cook" ? "/cook/profile" : "/app/discover")
+      if (nextPath && nextPath.startsWith("/")) {
+        navigate(nextPath)
+      } else {
+        navigate(user.role === "cook" ? "/cook/profile" : "/app/discover")
+      }
     } catch (error) {
       console.error(error)
-      addToast(error.response?.data?.message || "Invalid credentials. Please try again.", "error")
+      addToast(getApiErrorMessage(error, "Invalid credentials. Please try again."), "error")
     } finally {
       setLoading(false)
     }
@@ -60,7 +67,7 @@ export default function Login() {
                   placeholder="name@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full rounded-[1.25rem] border border-orange-100 bg-white px-5 py-4 outline-none ring-0 transition-all focus:border-orange-400 focus:shadow-lg focus:shadow-orange-100 placeholder:text-orange-200"
+                  className="w-full rounded-[1.25rem] border border-orange-400 bg-white px-5 py-4 outline-none ring-0 transition-all focus:border-orange-600 focus:shadow-lg focus:shadow-orange-100 placeholder:text-orange-200"
                 />
               </label>
               <label className="block">
@@ -73,7 +80,7 @@ export default function Login() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full rounded-[1.25rem] border border-orange-100 bg-white px-5 py-4 outline-none ring-0 transition-all focus:border-orange-400 focus:shadow-lg focus:shadow-orange-100 placeholder:text-orange-200"
+                  className="w-full rounded-[1.25rem] border border-orange-400 bg-white px-5 py-4 outline-none ring-0 transition-all focus:border-orange-600 focus:shadow-lg focus:shadow-orange-100 placeholder:text-orange-200"
                 />
               </label>
             </div>
@@ -81,7 +88,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full overflow-hidden rounded-3xl hero-gradient px-6 py-5 font-black text-white shadow-xl shadow-orange-200 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-70 disabled:hover:translate-y-0"
+              className="group relative w-full overflow-hidden rounded-3xl hero-gradient px-6 py-5 font-black !text-white shadow-xl shadow-orange-200 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-70 disabled:hover:translate-y-0"
             >
               <span className="relative z-10 flex items-center justify-center gap-2 text-lg">
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Enter MyMeal"} 
@@ -114,10 +121,10 @@ export default function Login() {
             </p>
           </div>
           
-          <div className="hero-gradient grow rounded-[2.5rem] p-10 text-white shadow-lg overflow-hidden relative">
+          <div className="hero-gradient grow rounded-[2.5rem] p-10 !text-white shadow-lg overflow-hidden relative">
              <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
              <p className="text-2xl font-black">Trusted by neighbors</p>
-             <p className="mt-4 text-white/80 text-balance">The easiest way to get healthy, home-cooked food every day.</p>
+             <p className="mt-4 !text-white/80 text-balance">The easiest way to get healthy, home-cooked food every day.</p>
           </div>
         </aside>
       </div>

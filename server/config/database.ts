@@ -61,9 +61,10 @@ const dbConfig = defineConfig({
         user: env.get('PG_USER'),
         password: env.get('PG_PASSWORD'),
         database: env.get('PG_DB_NAME'),
-        ssl: {
-          rejectUnauthorized: false,
-        },
+        // Local Postgres often has SSL off; Neon / managed DBs need SSL (set PG_SSL=true in .env).
+        ssl: env.get('PG_SSL')
+          ? { rejectUnauthorized: false }
+          : false,
       },
       migrations: {
         naturalSort: true,

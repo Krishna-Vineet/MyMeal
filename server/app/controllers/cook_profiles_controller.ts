@@ -20,12 +20,14 @@ export default class CookProfilesController {
 
         const payload = await request.validateUsing(createCookProfileValidator)
 
-        // Handle Image Uploads
-        if (payload.kitchenImage) {
-            payload.kitchenImage = await cloudinary.uploadImage(payload.kitchenImage)
+        const uploadIfNeeded = async (value: string | undefined) => {
+            if (!value) return value
+            const t = value.trim()
+            if (t.startsWith('http://') || t.startsWith('https://')) return t
+            return cloudinary.uploadImage(t)
         }
-        if (payload.bannerImage) {
-            payload.bannerImage = await cloudinary.uploadImage(payload.bannerImage)
+        if (payload.kitchenImage) {
+            payload.kitchenImage = await uploadIfNeeded(payload.kitchenImage)
         }
 
         const profile = await user.related('cookProfile').create(payload)
@@ -49,12 +51,14 @@ export default class CookProfilesController {
 
         const payload = await request.validateUsing(updateCookProfileValidator)
 
-        // Handle Image Uploads
-        if (payload.kitchenImage) {
-            payload.kitchenImage = await cloudinary.uploadImage(payload.kitchenImage)
+        const uploadIfNeeded = async (value: string | undefined) => {
+            if (!value) return value
+            const t = value.trim()
+            if (t.startsWith('http://') || t.startsWith('https://')) return t
+            return cloudinary.uploadImage(t)
         }
-        if (payload.bannerImage) {
-            payload.bannerImage = await cloudinary.uploadImage(payload.bannerImage)
+        if (payload.kitchenImage) {
+            payload.kitchenImage = await uploadIfNeeded(payload.kitchenImage)
         }
 
         profile.merge(payload)

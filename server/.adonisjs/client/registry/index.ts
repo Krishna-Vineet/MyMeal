@@ -6,6 +6,24 @@ import type { ApiDefinition } from './tree.d.ts'
 const placeholder: any = {}
 
 const routes = {
+  'discovers.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/discover/cooks',
+    tokens: [{"old":"/api/v1/discover/cooks","type":0,"val":"api","end":""},{"old":"/api/v1/discover/cooks","type":0,"val":"v1","end":""},{"old":"/api/v1/discover/cooks","type":0,"val":"discover","end":""},{"old":"/api/v1/discover/cooks","type":0,"val":"cooks","end":""}],
+    types: placeholder as Registry['discovers.index']['types'],
+  },
+  'discovers.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/discover/cooks/:id',
+    tokens: [{"old":"/api/v1/discover/cooks/:id","type":0,"val":"api","end":""},{"old":"/api/v1/discover/cooks/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/discover/cooks/:id","type":0,"val":"discover","end":""},{"old":"/api/v1/discover/cooks/:id","type":0,"val":"cooks","end":""},{"old":"/api/v1/discover/cooks/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['discovers.show']['types'],
+  },
+  'reviews.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/reviews/cook/:id',
+    tokens: [{"old":"/api/v1/reviews/cook/:id","type":0,"val":"api","end":""},{"old":"/api/v1/reviews/cook/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/reviews/cook/:id","type":0,"val":"reviews","end":""},{"old":"/api/v1/reviews/cook/:id","type":0,"val":"cook","end":""},{"old":"/api/v1/reviews/cook/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['reviews.index']['types'],
+  },
   'auth.auth.register': {
     methods: ["POST"],
     pattern: '/api/v1/auth/register',
@@ -29,6 +47,24 @@ const routes = {
     pattern: '/api/v1/account/profile',
     tokens: [{"old":"/api/v1/account/profile","type":0,"val":"api","end":""},{"old":"/api/v1/account/profile","type":0,"val":"v1","end":""},{"old":"/api/v1/account/profile","type":0,"val":"account","end":""},{"old":"/api/v1/account/profile","type":0,"val":"profile","end":""}],
     types: placeholder as Registry['profile.profile.show']['types'],
+  },
+  'profile.profile.update': {
+    methods: ["PATCH"],
+    pattern: '/api/v1/account/profile',
+    tokens: [{"old":"/api/v1/account/profile","type":0,"val":"api","end":""},{"old":"/api/v1/account/profile","type":0,"val":"v1","end":""},{"old":"/api/v1/account/profile","type":0,"val":"account","end":""},{"old":"/api/v1/account/profile","type":0,"val":"profile","end":""}],
+    types: placeholder as Registry['profile.profile.update']['types'],
+  },
+  'profile.profile.update_password': {
+    methods: ["PATCH"],
+    pattern: '/api/v1/account/profile/password',
+    tokens: [{"old":"/api/v1/account/profile/password","type":0,"val":"api","end":""},{"old":"/api/v1/account/profile/password","type":0,"val":"v1","end":""},{"old":"/api/v1/account/profile/password","type":0,"val":"account","end":""},{"old":"/api/v1/account/profile/password","type":0,"val":"profile","end":""},{"old":"/api/v1/account/profile/password","type":0,"val":"password","end":""}],
+    types: placeholder as Registry['profile.profile.update_password']['types'],
+  },
+  'profile.profile.deactivate': {
+    methods: ["POST"],
+    pattern: '/api/v1/account/profile/deactivate',
+    tokens: [{"old":"/api/v1/account/profile/deactivate","type":0,"val":"api","end":""},{"old":"/api/v1/account/profile/deactivate","type":0,"val":"v1","end":""},{"old":"/api/v1/account/profile/deactivate","type":0,"val":"account","end":""},{"old":"/api/v1/account/profile/deactivate","type":0,"val":"profile","end":""},{"old":"/api/v1/account/profile/deactivate","type":0,"val":"deactivate","end":""}],
+    types: placeholder as Registry['profile.profile.deactivate']['types'],
   },
   'cook_profiles.store': {
     methods: ["POST"],
@@ -60,17 +96,11 @@ const routes = {
     tokens: [{"old":"/api/v1/meal-plans/:id","type":0,"val":"api","end":""},{"old":"/api/v1/meal-plans/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/meal-plans/:id","type":0,"val":"meal-plans","end":""},{"old":"/api/v1/meal-plans/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['meal_plans.update']['types'],
   },
-  'discovers.index': {
-    methods: ["GET","HEAD"],
-    pattern: '/api/v1/discover/cooks',
-    tokens: [{"old":"/api/v1/discover/cooks","type":0,"val":"api","end":""},{"old":"/api/v1/discover/cooks","type":0,"val":"v1","end":""},{"old":"/api/v1/discover/cooks","type":0,"val":"discover","end":""},{"old":"/api/v1/discover/cooks","type":0,"val":"cooks","end":""}],
-    types: placeholder as Registry['discovers.index']['types'],
-  },
-  'discovers.show': {
-    methods: ["GET","HEAD"],
-    pattern: '/api/v1/discover/cooks/:id',
-    tokens: [{"old":"/api/v1/discover/cooks/:id","type":0,"val":"api","end":""},{"old":"/api/v1/discover/cooks/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/discover/cooks/:id","type":0,"val":"discover","end":""},{"old":"/api/v1/discover/cooks/:id","type":0,"val":"cooks","end":""},{"old":"/api/v1/discover/cooks/:id","type":1,"val":"id","end":""}],
-    types: placeholder as Registry['discovers.show']['types'],
+  'meal_plans.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/v1/meal-plans/:id',
+    tokens: [{"old":"/api/v1/meal-plans/:id","type":0,"val":"api","end":""},{"old":"/api/v1/meal-plans/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/meal-plans/:id","type":0,"val":"meal-plans","end":""},{"old":"/api/v1/meal-plans/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['meal_plans.destroy']['types'],
   },
   'subscriptions.index': {
     methods: ["GET","HEAD"],
@@ -161,12 +191,6 @@ const routes = {
     pattern: '/api/v1/reviews',
     tokens: [{"old":"/api/v1/reviews","type":0,"val":"api","end":""},{"old":"/api/v1/reviews","type":0,"val":"v1","end":""},{"old":"/api/v1/reviews","type":0,"val":"reviews","end":""}],
     types: placeholder as Registry['reviews.store']['types'],
-  },
-  'reviews.index': {
-    methods: ["GET","HEAD"],
-    pattern: '/api/v1/reviews/cook/:id',
-    tokens: [{"old":"/api/v1/reviews/cook/:id","type":0,"val":"api","end":""},{"old":"/api/v1/reviews/cook/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/reviews/cook/:id","type":0,"val":"reviews","end":""},{"old":"/api/v1/reviews/cook/:id","type":0,"val":"cook","end":""},{"old":"/api/v1/reviews/cook/:id","type":1,"val":"id","end":""}],
-    types: placeholder as Registry['reviews.index']['types'],
   },
 } as const satisfies Record<string, AdonisEndpoint>
 

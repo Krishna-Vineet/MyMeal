@@ -52,7 +52,7 @@ export default class OrderService {
           orderDate: current.toSQLDate(),
           status: 'scheduled',
           price: dailyPrice,
-          pickupSlotId: subscription.pickupSlotId
+          totalPrice: dailyPrice // Migration has total_price, likely redundant but safe
         })
       }
       current = current.plus({ days: 1 })
@@ -90,7 +90,7 @@ export default class OrderService {
           orderDate: current.toSQLDate(),
           status: 'scheduled',
           price: dailyPrice,
-          pickupSlotId: subscription.pickupSlotId
+          totalPrice: dailyPrice
         })
       }
       current = current.plus({ days: 1 })
@@ -176,8 +176,6 @@ export default class OrderService {
    * Auto-transition 'prepared' orders to 'missed' after 3 hours
    */
   public async handleAutoMissed() {
-    // This is a bit complex because pickupTime is a string "HH:mm" in PickupSlot
-    // We need to find orders that were 'prepared' but not 'picked_up'
     const orders = await Order.query()
       .where('status', 'prepared')
       .where('orderDate', '<=', DateTime.now().toSQLDate())

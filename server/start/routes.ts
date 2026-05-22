@@ -22,6 +22,11 @@ router.get('/health', () => {
 
 router
   .group(() => {
+    // Browse kitchens & reviews without logging in (marketing + discovery).
+    router.get('/discover/cooks', [controllers.Discovers, 'index'])
+    router.get('/discover/cooks/:id', [controllers.Discovers, 'show'])
+    router.get('/reviews/cook/:id', [controllers.Reviews, 'index'])
+
     router
       .group(() => {
         router.post('register', [controllers.Auth, 'register'])
@@ -36,6 +41,9 @@ router
     router
       .group(() => {
         router.get('/profile', [controllers.Profile, 'show'])
+        router.patch('/profile', [controllers.Profile, 'update'])
+        router.patch('/profile/password', [controllers.Profile, 'updatePassword'])
+        router.post('/profile/deactivate', [controllers.Profile, 'deactivate'])
       })
       .prefix('account')
       .as('profile')
@@ -55,18 +63,10 @@ router
         router.get('/', [controllers.MealPlans, 'index'])
         router.post('/', [controllers.MealPlans, 'store'])
         router.patch('/:id', [controllers.MealPlans, 'update'])
+        router.delete('/:id', [controllers.MealPlans, 'destroy'])
       })
       .prefix('meal-plans')
       .use([middleware.auth(), middleware.role('cook')])
-
-
-    router
-      .group(() => {
-        router.get('/cooks', [controllers.Discovers, 'index'])
-        router.get('/cooks/:id', [controllers.Discovers, 'show'])
-      })
-      .prefix('discover')
-      .use([middleware.auth(), middleware.role('consumer')])
 
 
     router
@@ -105,10 +105,11 @@ router
       .use(middleware.auth())
 
 
-    // Reviews
-    router.group(() => {
-      router.post('/', [controllers.Reviews, 'store']).as('reviews.store')
-      router.get('/cook/:id', [controllers.Reviews, 'index']).as('reviews.index')
-    }).prefix('reviews').use(middleware.auth())
+    router
+      .group(() => {
+        router.post('/', [controllers.Reviews, 'store']).as('reviews.store')
+      })
+      .prefix('reviews')
+      .use(middleware.auth())
   })
   .prefix('/api/v1')

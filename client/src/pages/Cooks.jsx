@@ -1,3 +1,4 @@
+import { Link, useLocation } from "react-router-dom"
 import { Users, Star, MapPin, ArrowRight, ChefHat, Calendar, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { useQuery } from "@tanstack/react-query"
@@ -5,6 +6,9 @@ import { discoverService } from "../services/discoverService"
 import MotionPage from "../components/MotionPage"
 
 export default function Cooks() {
+  const { pathname } = useLocation()
+  const cooksBase = pathname.startsWith("/app") ? "/app/cooks" : "/cooks"
+
   const { data: cooks, isLoading, error } = useQuery({
     queryKey: ["cooks"],
     queryFn: () => discoverService.getCooks()
@@ -52,11 +56,15 @@ export default function Cooks() {
               className="soft-card group rounded-[2.5rem] p-8 transition-all hover:shadow-2xl hover:shadow-rose-100"
             >
               <div className="flex items-center justify-between gap-4">
-                <div className="h-16 w-16 rounded-2xl bg-rose-50 flex items-center justify-center text-[#9d2b2b] group-hover:bg-[#1f1308] group-hover:text-white transition-colors">
-                  <ChefHat className="h-8 w-8" />
-                </div>
+                {cook.kitchenImage ? (
+                  <img src={cook.kitchenImage} alt={cook.kitchenName} className="h-16 w-16 rounded-2xl object-cover shadow-md" />
+                ) : (
+                  <div className="h-16 w-16 rounded-2xl bg-rose-50 flex items-center justify-center text-[#9d2b2b] group-hover:bg-[#1f1308] group-hover:!text-white transition-colors">
+                    <ChefHat className="h-8 w-8" />
+                  </div>
+                )}
                 <div className="flex items-center gap-1 rounded-2xl bg-rose-50 px-4 py-2 font-black text-[#9d2b2b]">
-                   <Star className="h-4 w-4 fill-[#9d2b2b]" /> 4.9
+                   <Star className="h-4 w-4 fill-[#9d2b2b]" /> {cook.avgRating ? Number(cook.avgRating).toFixed(1) : "New"}
                 </div>
               </div>
               
@@ -67,14 +75,26 @@ export default function Cooks() {
 
               <div className="mt-8 space-y-3">
                 <div className="flex items-center justify-between text-sm font-bold text-[#705743]">
-                  <span className="flex items-center gap-2 italic"><MapPin className="h-4 w-4" /> {cook.area || "Nearby"}</span>
-                  <span className="flex items-center gap-2 text-[#9d2b2b]"><Calendar className="h-4 w-4" /> Available Daily</span>
+                  <span className="flex items-center gap-2 italic"><MapPin className="h-4 w-4" /> {cook.city || cook.address || "Nearby"}</span>
+                  <span className="flex items-center gap-2 text-[#9d2b2b]">
+                    <Calendar className="h-4 w-4" /> 
+                    {(() => {
+                      const types = new Set(cook.mealPlans?.map(p => p.validityType))
+                      if (types.has('all_days') || (types.has('weekdays') && types.has('weekends'))) return "Available Daily"
+                      if (types.has('weekdays')) return "Weekdays Only"
+                      if (types.has('weekends')) return "Weekends Only"
+                      return "Check Plans"
+                    })()}
+                  </span>
                 </div>
               </div>
               
-              <button className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1f1308] px-6 py-4 font-black text-white shadow-lg transition-all hover:bg-[#9d2b2b] active:scale-95">
+              <Link
+                to={`${cooksBase}/${cook.id}`}
+                className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1f1308] px-6 py-4 font-black !text-white shadow-lg transition-all hover:bg-[#9d2b2b] active:scale-95"
+              >
                 View kitchen <ArrowRight className="h-4 w-4" />
-              </button>
+              </Link>
             </motion.article>
           ))}
         </section>

@@ -5,7 +5,11 @@ import MealComponent from '#models/meal_component'
 import OrderService from '#services/order_service'
 import PaymentService from '#services/payment_service'
 import db from '@adonisjs/lucid/services/db'
-import { createSubscriptionValidator } from '#validators/subscription'
+import {
+  createSubscriptionValidator,
+  updateSubscriptionStatusValidator,
+  updateSubscriptionValidator,
+} from '#validators/subscription'
 import { DateTime } from 'luxon'
 
 export default class SubscriptionsController {
@@ -160,7 +164,7 @@ export default class SubscriptionsController {
                     userId: user.id,
                     subscriptionId: subscription.id,
                     amount: ap,
-                    method: 'advance_payment',
+                    method: 'upi',
                     type: 'advance'
                 })
             }
@@ -222,7 +226,11 @@ export default class SubscriptionsController {
 
         if (!subscription) return response.notFound({ message: 'Subscription not found' })
 
-        const payload = await request.validateUsing(createSubscriptionValidator) // Reusing structure for edit
+        const payload = await request.validateUsing(updateSubscriptionValidator)
+
+        if (!payload.pickupSlotId && !payload.components) {
+            return response.badRequest({ message: 'Provide pickupSlotId and/or components to update' })
+        }
 
         const trx = await db.transaction()
 
@@ -292,7 +300,7 @@ export default class SubscriptionsController {
      */
     async updateStatus({ params, request, auth, response }: HttpContext) {
         const user = auth.user!
-        const { status } = request.all()
+        const { status } = await request.validateUsing(updateSubscriptionStatusValidator)
         const subscription = await Subscription.query()
             .where('id', params.id)
             .where('userId', user.id)

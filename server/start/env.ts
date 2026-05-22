@@ -34,6 +34,8 @@ export default await Env.create(new URL('../', import.meta.url), {
   PG_DB_NAME: Env.schema.string(),
   PG_SSL: Env.schema.boolean(),
 
+  // WhatsApp Web (optional; keep false so APIs never load Puppeteer)
+  WHATSAPP_ENABLED: Env.schema.boolean.optional(),
 
   // Cloudinary
   CLOUDINARY_CLOUD_NAME: Env.schema.string.optional(),

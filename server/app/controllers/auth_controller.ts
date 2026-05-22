@@ -14,7 +14,7 @@ export default class AuthController {
     // 4. Create user (Hashing is handled by User model hook now)
     const user = await User.create({
       name: payload.name,
-      email: payload.email,
+      email: payload.email.toLowerCase(),
       phone: payload.phone,
       password: payload.password,
       role: payload.role || "consumer",
@@ -40,13 +40,17 @@ export default class AuthController {
   /**
    * User Login Flow
    */
-  async login({ request }: HttpContext) {
+  async login({ request, response }: HttpContext) {
     // Validate email and password presence
     const { email, password } = await request.validateUsing(loginValidator)
 
     // Find user by email and verify password hash
     // (Adonis handles the hash comparison under the hood with verifyCredentials)
-    const user = await User.verifyCredentials(email, password)
+    const user = await User.verifyCredentials(email.toLowerCase(), password)
+
+    if (user.isActive === false) {
+      return response.forbidden({ message: 'This account has been deactivated.' })
+    }
 
     // Create a new token for the session
     const token = await User.accessTokens.create(user)

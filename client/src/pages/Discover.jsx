@@ -1,3 +1,4 @@
+import { Link, useLocation } from "react-router-dom"
 import { Search, MapPin, Star, Filter, ArrowRight, Zap, Clock, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { useQuery } from "@tanstack/react-query"
@@ -5,6 +6,9 @@ import { discoverService } from "../services/discoverService"
 import MotionPage from "../components/MotionPage"
 
 export default function Discover() {
+  const { pathname } = useLocation()
+  const discoverBase = pathname.startsWith("/app") ? "/app/discover" : "/discover"
+
   const { data: cooks, isLoading, error } = useQuery({
     queryKey: ["cooks"],
     queryFn: () => discoverService.getCooks()
@@ -69,37 +73,39 @@ export default function Discover() {
               className="soft-card group rounded-[2.5rem] p-8 transition-all hover:shadow-2xl hover:shadow-orange-200/40 relative"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <h2 className="text-2xl font-black text-[#1f1308] group-hover:text-[#9a4b00] transition-colors">{cook.kitchenName}</h2>
-                  <p className="mt-2 flex items-center gap-2 font-bold text-[#6f5540]">
-                    <Zap className="h-4 w-4 text-orange-500" /> {cook.user?.name || "Home Chef"}
-                  </p>
+                <div className="flex-1 flex items-center gap-4">
+                  {cook.kitchenImage && (
+                    <img src={cook.kitchenImage} alt={cook.kitchenName} className="h-16 w-16 rounded-2xl object-cover shadow-sm shrink-0" />
+                  )}
+                  <div>
+                    <h2 className="text-2xl font-black text-[#1f1308] group-hover:text-[#9a4b00] transition-colors">{cook.kitchenName}</h2>
+                    <p className="mt-2 flex items-center gap-2 font-bold text-[#6f5540]">
+                      <Zap className="h-4 w-4 text-orange-500" /> {cook.user?.name || "Home Chef"}
+                    </p>
+                  </div>
                 </div>
                 <div className="rounded-[1.25rem] bg-orange-100 px-5 py-3 text-xl font-black text-[#a45100] shadow-sm shadow-orange-200">
-                  {cook.isAcceptingOrders ? "Open" : "Closed"}
+                  Open
                 </div>
               </div>
               
               <p className="mt-6 flex items-center gap-2 text-sm font-bold text-[#705743]">
-                <MapPin className="h-4 w-4 text-[#8f6f55]" /> {cook.area || "Neighborhood"}
+                <MapPin className="h-4 w-4 text-[#8f6f55]" /> {cook.city || cook.address || "Neighborhood"}
               </p>
               
-              <div className="mt-6 flex flex-wrap gap-2">
-                {['Homestyle', 'Fresh', 'Pickup'].map((tag) => (
-                  <span key={tag} className="rounded-full bg-orange-50 px-4 py-1 text-xs font-bold text-[#704f37] border border-orange-100">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              
-              <div className="mt-10 flex items-center justify-between border-t border-orange-100 pt-6">
+              <div className="mt-4 flex items-center justify-between border-t border-orange-100 pt-2">
                 <div className="flex items-center gap-1">
                    <Star className="h-5 w-5 fill-orange-400 text-orange-400" />
-                   <span className="text-lg font-black text-[#1f1308]">4.9</span>
+                   <span className="text-lg font-black text-[#1f1308]">
+                     {cook.avgRating ? Number(cook.avgRating).toFixed(1) : "New"}
+                   </span>
                 </div>
-                <button className="flex items-center gap-2 rounded-2xl bg-[#1f1308] px-6 py-3 font-bold text-white shadow-lg transition-all hover:bg-[#9a4b00] active:scale-95">
+                <Link
+                  to={`${discoverBase}/${cook.id}`}
+                  className="flex items-center gap-2 rounded-2xl bg-[#1f1308] px-6 py-3 font-bold !text-white shadow-lg transition-all hover:bg-[#9a4b00] active:scale-95"
+                >
                   View Kitchen <ArrowRight className="h-4 w-4" />
-                </button>
+                </Link>
               </div>
             </motion.article>
           ))}

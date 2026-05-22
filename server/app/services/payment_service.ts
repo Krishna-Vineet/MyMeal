@@ -73,9 +73,9 @@ export default class PaymentService {
       await Payment.create({
         userId: cook.userId,
         amount: amount,
-        method: 'transfer',
+        method: 'upi',
         type: 'payout',
-        status: 'completed'
+        status: 'success'
       }, { client: trx })
       
       await trx.commit()
