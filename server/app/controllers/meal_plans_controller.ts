@@ -138,6 +138,14 @@ export default class MealPlansController {
 
         let payload = request.all()
         
+        // 1. Parse JSON strings back to arrays
+        const jsonFields = ['components', 'pickupSlots', 'availableDurations']
+        jsonFields.forEach(field => {
+            if (typeof payload[field] === 'string' && (payload[field].startsWith('[') || payload[field].startsWith('{'))) {
+                try { payload[field] = JSON.parse(payload[field]) } catch (e) {}
+            }
+        })
+
         // Handle FormData stringification
         if (payload.isActive === 'true') payload.isActive = true
         if (payload.isActive === 'false') payload.isActive = false
@@ -168,9 +176,72 @@ export default class MealPlansController {
         }
 
         mealPlan.merge(mergedPayload)
-        await mealPlan.save()
 
-        return response.ok({ message: 'Meal plan updated successfully', mealPlan })
+        const trx = await db.transaction()
+        try {
+            mealPlan.useTransaction(trx)
+            await mealPlan.save()
+
+            if (payload.components) {
+                const existingComponents = await mealPlan.related('mealComponents').query()
+                const incomingIds = payload.components.map((c: any) => c.id).filter(Boolean)
+
+                for (const ec of existingComponents) {
+                    if (!incomingIds.includes(ec.id)) {
+                        try { await ec.delete() } catch (e) {
+                            throw new Error(`Cannot delete add-on "${ec.name}" because it is currently in use by an active subscription.`)
+                        }
+                    }
+                }
+
+                for (const c of payload.components) {
+                    if (c.id) {
+                        const match = existingComponents.find(ec => ec.id === c.id)
+                        if (match) {
+                            match.merge(c)
+                            await match.save()
+                        }
+                    } else {
+                        await mealPlan.related('mealComponents').create(c)
+                    }
+                }
+            }
+
+            if (payload.pickupSlots) {
+                const existingSlots = await mealPlan.related('pickupSlots').query()
+                const incomingIds = payload.pickupSlots.map((s: any) => s.id).filter(Boolean)
+
+                for (const es of existingSlots) {
+                    if (!incomingIds.includes(es.id)) {
+                        try { await es.delete() } catch (e) {
+                            throw new Error(`Cannot delete pickup slot "${es.locationName}" because it is currently in use by an active subscription.`)
+                        }
+                    }
+                }
+
+                for (const s of payload.pickupSlots) {
+                    if (s.id) {
+                        const match = existingSlots.find(es => es.id === s.id)
+                        if (match) {
+                            match.merge(s)
+                            await match.save()
+                        }
+                    } else {
+                        await mealPlan.related('pickupSlots').create(s)
+                    }
+                }
+            }
+
+            await trx.commit()
+
+            await mealPlan.load('mealComponents')
+            await mealPlan.load('pickupSlots')
+
+            return response.ok({ message: 'Meal plan updated successfully', mealPlan })
+        } catch (error) {
+            await trx.rollback()
+            return response.internalServerError({ message: 'Failed to update meal plan', error: (error as Error).message })
+        }
     }
 
     /**

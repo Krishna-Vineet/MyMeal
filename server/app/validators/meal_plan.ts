@@ -47,6 +47,7 @@ export const updateMealPlanValidator = vine.compile(
         // For MVP, we allow optional array replacement for components/slots in PATCH
         components: vine.array(
             vine.object({
+                id: vine.string().optional(),
                 name: vine.string().trim().minLength(2),
                 price: vine.number().min(0).optional(),
                 defaultQuantity: vine.number().min(0).optional(),
@@ -57,6 +58,7 @@ export const updateMealPlanValidator = vine.compile(
 
         pickupSlots: vine.array(
             vine.object({
+                id: vine.string().optional(),
                 locationName: vine.string().trim().minLength(2),
                 address: vine.string().trim().optional(),
                 latitude: vine.string().trim().optional(),

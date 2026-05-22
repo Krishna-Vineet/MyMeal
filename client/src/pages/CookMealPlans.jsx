@@ -82,7 +82,7 @@ export default function CookMealPlans() {
         setAvailableDurations(new Set(data.availableDurations || ["1_month"]))
         setComponents(data.components || [emptyComponent()])
         setPickupSlots(data.pickupSlots || [emptySlot()])
-        if (data.title || data.description) setShowBuilder(true)
+        // We removed auto-opening the builder so the user only sees it when explicitly clicked.
       } catch (e) {
         console.error("Failed to load draft", e)
       }
@@ -91,7 +91,7 @@ export default function CookMealPlans() {
 
   // 2. Save draft when fields change
   useEffect(() => {
-    if (!showBuilder) return
+    if (!showBuilder || editingId) return
     const draft = {
       title,
       description,
@@ -149,20 +149,28 @@ export default function CookMealPlans() {
       isActive,
       validityType,
       availableDurations: durs,
-      components: components.map((c) => ({
-        name: c.name.trim(),
-        price: Number(c.price) || 0,
-        defaultQuantity: Number(c.defaultQuantity) || 0,
-        maxQuantity: Math.max(1, Number(c.maxQuantity) || 1),
-        isToggle: !c.isToggle,
-      })),
-      pickupSlots: pickupSlots.map((s) => ({
-        locationName: s.locationName.trim(),
-        address: s.address?.trim() || undefined,
-        latitude: s.latitude?.trim() || undefined,
-        longitude: s.longitude?.trim() || undefined,
-        pickupTime: normalizeTime(s.pickupTime),
-      })),
+      components: components.map((c) => {
+        const comp = {
+          name: c.name.trim(),
+          price: Number(c.price) || 0,
+          defaultQuantity: Number(c.defaultQuantity) || 0,
+          maxQuantity: Math.max(1, Number(c.maxQuantity) || 1),
+          isToggle: !c.isToggle,
+        }
+        if (c.id) comp.id = c.id
+        return comp
+      }),
+      pickupSlots: pickupSlots.map((s) => {
+        const slot = {
+          locationName: s.locationName.trim(),
+          address: s.address?.trim() || undefined,
+          latitude: s.latitude?.trim() || undefined,
+          longitude: s.longitude?.trim() || undefined,
+          pickupTime: normalizeTime(s.pickupTime),
+        }
+        if (s.id) slot.id = s.id
+        return slot
+      }),
     }
   }, [
     title,
@@ -314,7 +322,13 @@ export default function CookMealPlans() {
 
         <section className="grid gap-6 md:grid-cols-2">
           {(plans || []).map((p) => (
-            <article key={p.id} className="soft-card flex flex-col justify-between rounded-[2rem] p-8">
+            <article key={p.id} className="soft-card flex flex-col justify-between rounded-[2rem] overflow-hidden">
+              {p.bannerImage && (
+                <div className="aspect-video w-full overflow-hidden bg-orange-50">
+                  <img src={p.bannerImage} alt={p.title} className="h-full w-full object-cover" />
+                </div>
+              )}
+              <div className="flex flex-col justify-between flex-1 p-8">
               <div className="flex items-start gap-3">
                 <UtensilsCrossed className="h-6 w-6 text-rose-600 shrink-0" />
                 <div className="flex-1">
@@ -357,6 +371,7 @@ export default function CookMealPlans() {
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
+              </div>
               </div>
             </article>
           ))}
@@ -687,7 +702,7 @@ export default function CookMealPlans() {
               disabled={createMutation.isPending}
               className="w-full rounded-2xl bg-[#2b0f10] py-4 font-black !text-white disabled:opacity-60"
             >
-              {createMutation.isPending ? "Creating…" : "Publish meal plan"}
+              {createMutation.isPending ? (editingId ? "Saving..." : "Creating…") : (editingId ? "Save changes" : "Publish meal plan")}
             </button>
           </form>
         </div>

@@ -114,7 +114,13 @@ export default function KitchenDetail() {
           <h2 className="text-2xl font-black text-[#1f1308]">Meal plans</h2>
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
             {(cook.mealPlans || []).map((plan) => (
-              <article key={plan.id} className="soft-card rounded-[2rem] p-8">
+              <article key={plan.id} className="soft-card rounded-[2rem] overflow-hidden">
+                {plan.bannerImage && (
+                  <div className="aspect-video w-full overflow-hidden bg-orange-50">
+                    <img src={plan.bannerImage} alt={plan.title} className="h-full w-full object-cover" />
+                  </div>
+                )}
+                <div className="p-8">
                 <h3 className="text-xl font-black">{plan.title}</h3>
                 <p className="mt-2 text-[#614937]">{plan.description}</p>
                 <p className="mt-4 text-2xl font-black text-[#a45100]">
@@ -127,6 +133,7 @@ export default function KitchenDetail() {
                 >
                   Subscribe
                 </Link>
+                </div>
               </article>
             ))}
           </div>

@@ -7,12 +7,16 @@ export const mealService = {
   },
 
   createPlan: async (planData) => {
-    const { data } = await api.post("meal-plans", planData)
+    const { data } = await api.post("meal-plans", planData, {
+      headers: planData instanceof FormData ? { "Content-Type": undefined } : {},
+    })
     return data.mealPlan ?? data
   },
 
   updatePlan: async (id, planData) => {
-    const { data } = await api.patch(`meal-plans/${id}`, planData)
+    const { data } = await api.patch(`meal-plans/${id}`, planData, {
+      headers: planData instanceof FormData ? { "Content-Type": undefined } : {},
+    })
     return data.mealPlan ?? data
   },
 
