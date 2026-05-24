@@ -88,7 +88,8 @@ export default function Subscribe() {
           
           let itemExtraPrice = 0
           if (mc.isToggle) {
-            itemExtraPrice = mc.price || 0
+            // For toggle items, price scales with selected quantity
+            itemExtraPrice = (v.quantity || 0) * (mc.price || 0)
           } else {
             const extraQty = v.quantity - (mc.defaultQuantity || 0)
             if (extraQty > 0) itemExtraPrice = extraQty * (mc.price || 0)
