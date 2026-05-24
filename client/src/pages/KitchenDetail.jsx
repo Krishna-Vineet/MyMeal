@@ -127,6 +127,9 @@ export default function KitchenDetail() {
                   ₹{plan.basePrice}
                   <span className="text-sm font-bold text-[#8f6f55]"> / day base</span>
                 </p>
+                <p className="mt-2 text-sm text-[#614937]">
+                  Validity: {plan.validityType === "all_days" ? "All days" : plan.validityType === "weekdays" ? "Weekdays only" : plan.validityType === "weekends" ? "Weekends only" : ""}
+                </p>
                 <Link
                   to={subscribeUrl(plan.id)}
                   className="mt-6 inline-flex rounded-2xl bg-[#1f1308] px-6 py-3 font-black !text-white shadow-lg transition hover:bg-[#9a4b00]"

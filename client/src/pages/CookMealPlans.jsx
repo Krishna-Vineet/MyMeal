@@ -340,6 +340,9 @@ export default function CookMealPlans() {
                   </div>
                   <p className="mt-2 text-sm text-[#6e5252] line-clamp-2">{p.description}</p>
                   <p className="mt-4 text-2xl font-black text-rose-700">₹{p.basePrice}</p>
+                <p className="mt-2 text-sm text-[#614937]">
+                  Validity: {p.validityType === "all_days" ? "All days" : p.validityType === "weekdays" ? "Weekdays only" : p.validityType === "weekends" ? "Weekends only" : ""}
+                </p>
                   <p className="mt-2 text-xs font-bold uppercase tracking-widest text-[#8b6767]">
                     {p.mealComponents?.length || 0} add-ons · {p.pickupSlots?.length || 0} slots
                   </p>

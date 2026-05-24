@@ -282,7 +282,9 @@ export default function Subscribe() {
                                 <div>
                                     <p className="font-bold text-[#2b0f10]">{mc.name}</p>
                                     <p className="text-xs font-black text-orange-700">₹{mc.price} / item</p>
-                                </div>
+                                    <p className="mt-2 text-sm text-[#614937]">
+                  Validity: {plan.validityType === "all_days" ? "All days" : plan.validityType === "weekdays" ? "Weekdays only" : plan.validityType === "weekends" ? "Weekends only" : ""}
+                </p>                </div>
                             </div>
                             {state.enabled && (
                                 <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-1 shadow-sm border border-orange-100">
@@ -379,6 +381,9 @@ export default function Subscribe() {
                   <span className="opacity-70">Base price / day</span>
                   <span>₹{plan.basePrice}</span>
                 </div>
+                <p className="mt-2 text-sm text-[#614937]">
+                  Validity: {plan.validityType === "all_days" ? "All days" : plan.validityType === "weekdays" ? "Weekdays only" : plan.validityType === "weekends" ? "Weekends only" : ""}
+                </p>
                 {Object.entries(selectedComponents).filter(([_, v]) => v.enabled).map(([id, v]) => {
                     const mc = plan.mealComponents?.find(m => m.id === id)
                     if (!mc) return null
